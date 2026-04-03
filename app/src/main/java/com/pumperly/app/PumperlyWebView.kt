@@ -10,6 +10,7 @@ import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.ProgressBar
@@ -77,6 +78,17 @@ class PumperlyWebViewClient(
                 error.errorCode == ERROR_TIMEOUT || error.errorCode == ERROR_IO
             ) WebViewError.OFFLINE else WebViewError.PAGE
             onError(type, request.url?.toString())
+        }
+    }
+
+    override fun onReceivedHttpError(
+        view: WebView,
+        request: WebResourceRequest,
+        errorResponse: WebResourceResponse
+    ) {
+        super.onReceivedHttpError(view, request, errorResponse)
+        if (request.isForMainFrame && errorResponse.statusCode >= 400) {
+            onError(WebViewError.PAGE, request.url?.toString())
         }
     }
 

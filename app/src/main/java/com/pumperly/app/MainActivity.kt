@@ -250,14 +250,13 @@ class MainActivity : ComponentActivity() {
 
         webView.webViewClient = PumperlyWebViewClient(
             progressBar = progressBar,
-            onError = { type, _ ->
-                currentError = type
+            onError = { type, failingUrl ->
+                pendingUrl = failingUrl ?: pendingUrl
                 showErrorPage(type)
             },
             onPageStarted = {
                 pendingUrl = null
                 if (currentError != null) {
-                    currentError = null
                     hideErrorPage()
                 }
             }
@@ -349,6 +348,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun showErrorPage(type: WebViewError) {
+        currentError = type
         when (type) {
             WebViewError.OFFLINE -> {
                 errorTitle.text = getString(R.string.offline_title)
@@ -371,6 +371,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun hideErrorPage() {
+        currentError = null
         errorView.visibility = View.GONE
         swipeRefresh.visibility = View.VISIBLE
     }
