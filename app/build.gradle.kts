@@ -1,0 +1,69 @@
+plugins {
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
+}
+
+android {
+    namespace = "com.pumperly.app"
+    compileSdk = 35
+
+    defaultConfig {
+        applicationId = "com.pumperly.app"
+        minSdk = 26
+        targetSdk = 35
+        versionCode = 1
+        versionName = "1.0.0"
+    }
+
+    signingConfigs {
+        create("release") {
+            val keystorePath = findProperty("PUMPERLY_KEYSTORE_PATH") as String?
+                ?: System.getenv("PUMPERLY_KEYSTORE_PATH")
+            val keystorePass = findProperty("PUMPERLY_KEYSTORE_PASSWORD") as String?
+                ?: System.getenv("PUMPERLY_KEYSTORE_PASSWORD")
+            val keyAliasValue = findProperty("PUMPERLY_KEY_ALIAS") as String?
+                ?: System.getenv("PUMPERLY_KEY_ALIAS")
+            val keyPass = findProperty("PUMPERLY_KEY_PASSWORD") as String?
+                ?: System.getenv("PUMPERLY_KEY_PASSWORD")
+
+            if (keystorePath != null && keystorePass != null && keyAliasValue != null && keyPass != null) {
+                storeFile = file(keystorePath)
+                storePassword = keystorePass
+                keyAlias = keyAliasValue
+                keyPassword = keyPass
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+            val releaseConfig = signingConfigs.findByName("release")
+            if (releaseConfig?.storeFile != null) {
+                signingConfig = releaseConfig
+            }
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+}
+
+dependencies {
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.core.splashscreen)
+    implementation(libs.androidx.activity.ktx)
+    implementation(libs.androidx.webkit)
+    implementation(libs.androidx.swiperefreshlayout)
+}

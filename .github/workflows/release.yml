@@ -1,0 +1,57 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Decode keystore
+        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > app/release.keystore
+
+      - name: Build release AAB
+        run: ./gradlew bundleRelease
+        env:
+          PUMPERLY_KEYSTORE_PATH: app/release.keystore
+          PUMPERLY_KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          PUMPERLY_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          PUMPERLY_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+
+      - name: Build release APK
+        run: ./gradlew assembleRelease
+        env:
+          PUMPERLY_KEYSTORE_PATH: app/release.keystore
+          PUMPERLY_KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          PUMPERLY_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          PUMPERLY_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+
+      - name: Get version from tag
+        id: version
+        run: echo "version=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: ${{ steps.version.outputs.version }}
+          generate_release_notes: true
+          files: |
+            app/build/outputs/bundle/release/app-release.aab
+            app/build/outputs/apk/release/app-release.apk
