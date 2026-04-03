@@ -1,7 +1,3 @@
-<p align="center">
-  <img src="docs/images/banner.svg" alt="Pumperly Android" width="900"/>
-</p>
-
 <h1 align="center">Pumperly for Android</h1>
 
 <p align="center">
@@ -52,19 +48,20 @@ The debug APK will be at `app/build/outputs/apk/debug/app-debug.apk`.
 
 ### Signed Release Build
 
+Pass signing config as Gradle properties (`-P`) or environment variables:
+
 ```bash
-# Set signing config in local.properties:
-# PUMPERLY_KEYSTORE_PATH=path/to/keystore.jks
-# PUMPERLY_KEYSTORE_PASSWORD=...
-# PUMPERLY_KEY_ALIAS=...
-# PUMPERLY_KEY_PASSWORD=...
+./gradlew assembleRelease \
+  -PPUMPERLY_KEYSTORE_PATH=path/to/keystore.jks \
+  -PPUMPERLY_KEYSTORE_PASSWORD=changeme \
+  -PPUMPERLY_KEY_ALIAS=upload \
+  -PPUMPERLY_KEY_PASSWORD=changeme
 
-# Optionally override version (CI does this from the git tag):
-# VERSION_NAME=1.2.0
-# VERSION_CODE=10200
-
-./gradlew assembleRelease
+# Optionally override version (CI derives these from the git tag):
+#   -PVERSION_NAME=1.2.0 -PVERSION_CODE=10200
 ```
+
+Alternatively, set them as environment variables (`PUMPERLY_KEYSTORE_PATH`, etc.).
 
 ## Architecture
 

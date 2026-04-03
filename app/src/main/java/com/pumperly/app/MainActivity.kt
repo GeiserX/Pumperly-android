@@ -216,7 +216,7 @@ class MainActivity : ComponentActivity() {
             addView(errorMessage)
 
             errorButton = Button(this@MainActivity).apply {
-                setOnClickListener { retryLoading() }
+                setOnClickListener { handleErrorAction() }
             }
             addView(errorButton)
         }
@@ -253,7 +253,10 @@ class MainActivity : ComponentActivity() {
                 showErrorPage(type)
             },
             onPageStarted = {
-                currentError = null
+                if (currentError != null) {
+                    currentError = null
+                    hideErrorPage()
+                }
             }
         )
 
@@ -360,6 +363,21 @@ class MainActivity : ComponentActivity() {
     private fun hideErrorPage() {
         errorView.visibility = View.GONE
         swipeRefresh.visibility = View.VISIBLE
+    }
+
+    private fun handleErrorAction() {
+        when (currentError) {
+            WebViewError.SSL -> {
+                // Go back in history or fall back to base URL
+                hideErrorPage()
+                if (webView.canGoBack()) {
+                    webView.goBack()
+                } else {
+                    webView.loadUrl(BASE_URL)
+                }
+            }
+            else -> retryLoading()
+        }
     }
 
     private fun retryLoading() {
