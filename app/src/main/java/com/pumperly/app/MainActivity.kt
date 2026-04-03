@@ -340,7 +340,12 @@ class MainActivity : ComponentActivity() {
         // Cancel any pending callback (null signals cancellation to WebView)
         fileUploadCallback?.onReceiveValue(null)
         fileUploadCallback = filePathCallback
-        fileChooserLauncher.launch(chooserIntent)
+        try {
+            fileChooserLauncher.launch(chooserIntent)
+        } catch (_: android.content.ActivityNotFoundException) {
+            fileUploadCallback?.onReceiveValue(null)
+            fileUploadCallback = null
+        }
     }
 
     private fun showErrorPage(type: WebViewError) {
