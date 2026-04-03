@@ -10,6 +10,7 @@ import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.ProgressBar
@@ -18,9 +19,11 @@ import android.widget.ProgressBar
  * Custom WebViewClient that keeps pumperly.com navigation in-app
  * and opens external links in the system browser.
  */
+enum class WebViewError { OFFLINE, SSL, PAGE }
+
 class PumperlyWebViewClient(
     private val progressBar: ProgressBar,
-    private val onPageError: (failingUrl: String?) -> Unit,
+    private val onError: (type: WebViewError, failingUrl: String?) -> Unit,
     private val onPageStarted: () -> Unit
 ) : WebViewClient() {
 
@@ -32,15 +35,24 @@ class PumperlyWebViewClient(
     }
 
     override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
-        val host = request.url.host?.lowercase() ?: return false
-        if (host in PUMPERLY_HOSTS) {
+        val url = request.url
+        val scheme = url.scheme?.lowercase()
+        val host = url.host?.lowercase()
+
+        // Allow pumperly.com HTTPS navigation in-app
+        if (scheme == "https" && host in PUMPERLY_HOSTS) {
             return false
         }
-        // External link: open in system browser
-        val intent = Intent(Intent.ACTION_VIEW, request.url).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+
+        // Everything else (external HTTPS, mailto:, tel:, geo:, etc.) → system handler
+        try {
+            val intent = Intent(Intent.ACTION_VIEW, url).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            view.context.startActivity(intent)
+        } catch (_: android.content.ActivityNotFoundException) {
+            // No handler for this scheme — ignore silently
         }
-        view.context.startActivity(intent)
         return true
     }
 
@@ -61,17 +73,29 @@ class PumperlyWebViewClient(
         error: WebResourceError
     ) {
         super.onReceivedError(view, request, error)
-        // Only handle main frame errors
         if (request.isForMainFrame) {
-            onPageError(request.url?.toString())
+            val type = if (error.errorCode == ERROR_HOST_LOOKUP || error.errorCode == ERROR_CONNECT ||
+                error.errorCode == ERROR_TIMEOUT || error.errorCode == ERROR_IO
+            ) WebViewError.OFFLINE else WebViewError.PAGE
+            onError(type, request.url?.toString())
+        }
+    }
+
+    override fun onReceivedHttpError(
+        view: WebView,
+        request: WebResourceRequest,
+        errorResponse: WebResourceResponse
+    ) {
+        super.onReceivedHttpError(view, request, errorResponse)
+        if (request.isForMainFrame && errorResponse.statusCode >= 400) {
+            onError(WebViewError.PAGE, request.url?.toString())
         }
     }
 
     @Suppress("deprecation")
     override fun onReceivedSslError(view: WebView, handler: SslErrorHandler, error: SslError) {
-        // Never trust invalid certs. Cancel and show error.
         handler.cancel()
-        onPageError(error.url)
+        onError(WebViewError.SSL, error.url)
     }
 }
 
@@ -82,7 +106,7 @@ class PumperlyWebViewClient(
 class PumperlyWebChromeClient(
     private val progressBar: ProgressBar,
     private val onGeolocationRequest: (origin: String, callback: GeolocationPermissions.Callback) -> Unit,
-    private val onFileChooserRequest: (filePathCallback: ValueCallback<Array<Uri>>, acceptType: String?) -> Unit
+    private val onFileChooserRequest: (filePathCallback: ValueCallback<Array<Uri>>, intent: Intent) -> Unit
 ) : WebChromeClient() {
 
     override fun onProgressChanged(view: WebView, newProgress: Int) {
@@ -107,9 +131,13 @@ class PumperlyWebChromeClient(
         filePathCallback: ValueCallback<Array<Uri>>,
         fileChooserParams: FileChooserParams
     ): Boolean {
-        val acceptTypes = fileChooserParams.acceptTypes
-        val acceptType = if (acceptTypes.isNullOrEmpty()) null else acceptTypes[0]
-        onFileChooserRequest(filePathCallback, acceptType)
-        return true
+        return try {
+            val intent = fileChooserParams.createIntent()
+            onFileChooserRequest(filePathCallback, intent)
+            true
+        } catch (_: android.content.ActivityNotFoundException) {
+            filePathCallback.onReceiveValue(null)
+            false
+        }
     }
 }

@@ -50,12 +50,16 @@ class MainActivity : ComponentActivity() {
     private lateinit var webView: WebView
     private lateinit var progressBar: ProgressBar
     private lateinit var swipeRefresh: SwipeRefreshLayout
-    private lateinit var offlineView: LinearLayout
+    private lateinit var errorView: LinearLayout
+    private lateinit var errorTitle: TextView
+    private lateinit var errorMessage: TextView
+    private lateinit var errorButton: Button
 
     private var fileUploadCallback: ValueCallback<Array<Uri>>? = null
     private var pendingGeolocationOrigin: String? = null
     private var pendingGeolocationCallback: GeolocationPermissions.Callback? = null
-    private var isWebViewError = false
+    private var currentError: WebViewError? = null
+    private var pendingUrl: String? = null
 
     // Activity result launcher for file chooser
     private val fileChooserLauncher = registerForActivityResult(
@@ -72,7 +76,7 @@ class MainActivity : ComponentActivity() {
         } else {
             null
         }
-        fileUploadCallback?.onReceiveValue(results ?: emptyArray())
+        fileUploadCallback?.onReceiveValue(results)
         fileUploadCallback = null
     }
 
@@ -125,8 +129,9 @@ class MainActivity : ComponentActivity() {
             webView.loadUrl(urlToLoad)
             isSplashReady = true
         } else {
+            pendingUrl = urlToLoad
             isSplashReady = true
-            showOfflinePage()
+            showErrorPage(WebViewError.OFFLINE)
         }
     }
 
@@ -173,14 +178,14 @@ class MainActivity : ComponentActivity() {
         swipeRefresh.addView(webView)
         root.addView(swipeRefresh)
 
-        // Offline view (hidden by default)
-        offlineView = buildOfflineView()
-        root.addView(offlineView)
+        // Error view (hidden by default)
+        errorView = buildErrorView()
+        root.addView(errorView)
 
         return root
     }
 
-    private fun buildOfflineView(): LinearLayout {
+    private fun buildErrorView(): LinearLayout {
         return LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = android.view.Gravity.CENTER
@@ -197,28 +202,25 @@ class MainActivity : ComponentActivity() {
             else
                 ContextCompat.getColor(this@MainActivity, R.color.on_surface_light)
 
-            val titleView = TextView(this@MainActivity).apply {
-                text = getString(R.string.offline_title)
+            errorTitle = TextView(this@MainActivity).apply {
                 textSize = 24f
                 gravity = android.view.Gravity.CENTER
                 setTextColor(textColor)
             }
-            addView(titleView)
+            addView(errorTitle)
 
-            val messageView = TextView(this@MainActivity).apply {
-                text = getString(R.string.offline_message)
+            errorMessage = TextView(this@MainActivity).apply {
                 textSize = 16f
                 gravity = android.view.Gravity.CENTER
                 setPadding(0, 24, 0, 48)
                 setTextColor(textColor)
             }
-            addView(messageView)
+            addView(errorMessage)
 
-            val retryButton = Button(this@MainActivity).apply {
-                text = getString(R.string.offline_retry)
-                setOnClickListener { retryLoading() }
+            errorButton = Button(this@MainActivity).apply {
+                setOnClickListener { handleErrorAction() }
             }
-            addView(retryButton)
+            addView(errorButton)
         }
     }
 
@@ -248,12 +250,15 @@ class MainActivity : ComponentActivity() {
 
         webView.webViewClient = PumperlyWebViewClient(
             progressBar = progressBar,
-            onPageError = { _ ->
-                isWebViewError = true
-                showOfflinePage()
+            onError = { type, failingUrl ->
+                pendingUrl = failingUrl ?: pendingUrl
+                showErrorPage(type)
             },
             onPageStarted = {
-                isWebViewError = false
+                pendingUrl = null
+                if (currentError != null) {
+                    hideErrorPage()
+                }
             }
         )
 
@@ -262,8 +267,8 @@ class MainActivity : ComponentActivity() {
             onGeolocationRequest = { origin, callback ->
                 handleGeolocationRequest(origin, callback)
             },
-            onFileChooserRequest = { filePathCallback, acceptType ->
-                handleFileChooser(filePathCallback, acceptType)
+            onFileChooserRequest = { filePathCallback, intent ->
+                handleFileChooser(filePathCallback, intent)
             }
         )
     }
@@ -271,14 +276,16 @@ class MainActivity : ComponentActivity() {
     private fun setupSwipeRefresh() {
         swipeRefresh.setOnRefreshListener {
             if (isNetworkAvailable()) {
-                if (isWebViewError) {
-                    hideOfflinePage()
-                    webView.loadUrl(BASE_URL)
+                if (currentError != null) {
+                    hideErrorPage()
+                    val url = pendingUrl ?: webView.url ?: BASE_URL
+                    pendingUrl = null
+                    webView.loadUrl(url)
                 } else {
                     webView.reload()
                 }
             } else {
-                showOfflinePage()
+                showErrorPage(WebViewError.OFFLINE)
             }
             swipeRefresh.isRefreshing = false
         }
@@ -327,35 +334,69 @@ class MainActivity : ComponentActivity() {
 
     private fun handleFileChooser(
         filePathCallback: ValueCallback<Array<Uri>>,
-        acceptType: String?
+        chooserIntent: Intent
     ) {
-        // Cancel any pending callback
-        fileUploadCallback?.onReceiveValue(emptyArray())
+        // Cancel any pending callback (null signals cancellation to WebView)
+        fileUploadCallback?.onReceiveValue(null)
         fileUploadCallback = filePathCallback
-
-        val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
-            addCategory(Intent.CATEGORY_OPENABLE)
-            type = if (acceptType.isNullOrEmpty()) "*/*" else acceptType
-            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+        try {
+            fileChooserLauncher.launch(chooserIntent)
+        } catch (_: android.content.ActivityNotFoundException) {
+            fileUploadCallback?.onReceiveValue(null)
+            fileUploadCallback = null
         }
-        fileChooserLauncher.launch(Intent.createChooser(intent, null))
     }
 
-    private fun showOfflinePage() {
+    private fun showErrorPage(type: WebViewError) {
+        currentError = type
+        when (type) {
+            WebViewError.OFFLINE -> {
+                errorTitle.text = getString(R.string.offline_title)
+                errorMessage.text = getString(R.string.offline_message)
+                errorButton.text = getString(R.string.offline_retry)
+            }
+            WebViewError.SSL -> {
+                errorTitle.text = getString(R.string.ssl_error_title)
+                errorMessage.text = getString(R.string.ssl_error_message)
+                errorButton.text = getString(R.string.ssl_error_back)
+            }
+            WebViewError.PAGE -> {
+                errorTitle.text = getString(R.string.page_error_title)
+                errorMessage.text = getString(R.string.page_error_message)
+                errorButton.text = getString(R.string.page_error_retry)
+            }
+        }
         swipeRefresh.visibility = View.GONE
-        offlineView.visibility = View.VISIBLE
+        errorView.visibility = View.VISIBLE
     }
 
-    private fun hideOfflinePage() {
-        offlineView.visibility = View.GONE
+    private fun hideErrorPage() {
+        currentError = null
+        errorView.visibility = View.GONE
         swipeRefresh.visibility = View.VISIBLE
+    }
+
+    private fun handleErrorAction() {
+        when (currentError) {
+            WebViewError.SSL -> {
+                // Go back in history or fall back to base URL
+                hideErrorPage()
+                if (webView.canGoBack()) {
+                    webView.goBack()
+                } else {
+                    webView.loadUrl(BASE_URL)
+                }
+            }
+            else -> retryLoading()
+        }
     }
 
     private fun retryLoading() {
         if (isNetworkAvailable()) {
-            hideOfflinePage()
-            val currentUrl = webView.url ?: BASE_URL
-            webView.loadUrl(currentUrl)
+            hideErrorPage()
+            val url = pendingUrl ?: webView.url ?: BASE_URL
+            pendingUrl = null
+            webView.loadUrl(url)
         }
     }
 
@@ -387,12 +428,15 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         intent.data?.let { uri ->
-            if (isAllowedUrl(uri.toString())) {
+            val url = uri.toString()
+            if (isAllowedUrl(url)) {
                 if (isNetworkAvailable()) {
-                    hideOfflinePage()
-                    webView.loadUrl(uri.toString())
+                    pendingUrl = null
+                    hideErrorPage()
+                    webView.loadUrl(url)
                 } else {
-                    showOfflinePage()
+                    pendingUrl = url
+                    showErrorPage(WebViewError.OFFLINE)
                 }
             }
         }
