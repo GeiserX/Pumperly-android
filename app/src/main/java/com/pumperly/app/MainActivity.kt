@@ -59,6 +59,7 @@ class MainActivity : ComponentActivity() {
     private var pendingGeolocationOrigin: String? = null
     private var pendingGeolocationCallback: GeolocationPermissions.Callback? = null
     private var currentError: WebViewError? = null
+    private var pendingUrl: String? = null
 
     // Activity result launcher for file chooser
     private val fileChooserLauncher = registerForActivityResult(
@@ -128,6 +129,7 @@ class MainActivity : ComponentActivity() {
             webView.loadUrl(urlToLoad)
             isSplashReady = true
         } else {
+            pendingUrl = urlToLoad
             isSplashReady = true
             showErrorPage(WebViewError.OFFLINE)
         }
@@ -253,6 +255,7 @@ class MainActivity : ComponentActivity() {
                 showErrorPage(type)
             },
             onPageStarted = {
+                pendingUrl = null
                 if (currentError != null) {
                     currentError = null
                     hideErrorPage()
@@ -276,7 +279,9 @@ class MainActivity : ComponentActivity() {
             if (isNetworkAvailable()) {
                 if (currentError != null) {
                     hideErrorPage()
-                    webView.loadUrl(BASE_URL)
+                    val url = pendingUrl ?: webView.url ?: BASE_URL
+                    pendingUrl = null
+                    webView.loadUrl(url)
                 } else {
                     webView.reload()
                 }
@@ -383,8 +388,9 @@ class MainActivity : ComponentActivity() {
     private fun retryLoading() {
         if (isNetworkAvailable()) {
             hideErrorPage()
-            val currentUrl = webView.url ?: BASE_URL
-            webView.loadUrl(currentUrl)
+            val url = pendingUrl ?: webView.url ?: BASE_URL
+            pendingUrl = null
+            webView.loadUrl(url)
         }
     }
 
@@ -416,11 +422,14 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         intent.data?.let { uri ->
-            if (isAllowedUrl(uri.toString())) {
+            val url = uri.toString()
+            if (isAllowedUrl(url)) {
                 if (isNetworkAvailable()) {
+                    pendingUrl = null
                     hideErrorPage()
-                    webView.loadUrl(uri.toString())
+                    webView.loadUrl(url)
                 } else {
+                    pendingUrl = url
                     showErrorPage(WebViewError.OFFLINE)
                 }
             }

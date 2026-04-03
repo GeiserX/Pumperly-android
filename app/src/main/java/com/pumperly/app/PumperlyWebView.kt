@@ -119,8 +119,13 @@ class PumperlyWebChromeClient(
         filePathCallback: ValueCallback<Array<Uri>>,
         fileChooserParams: FileChooserParams
     ): Boolean {
-        val intent = fileChooserParams.createIntent()
-        onFileChooserRequest(filePathCallback, intent)
-        return true
+        return try {
+            val intent = fileChooserParams.createIntent()
+            onFileChooserRequest(filePathCallback, intent)
+            true
+        } catch (_: android.content.ActivityNotFoundException) {
+            filePathCallback.onReceiveValue(null)
+            false
+        }
     }
 }
