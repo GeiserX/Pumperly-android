@@ -33,8 +33,18 @@ class MainActivity : ComponentActivity() {
 
     companion object {
         private const val BASE_URL = "https://pumperly.com"
-        private const val APP_VERSION = "1.0.0"
+        private val APP_VERSION = BuildConfig.VERSION_NAME
         private const val STATE_URL = "current_url"
+        private val ALLOWED_HOSTS = setOf("pumperly.com", "www.pumperly.com")
+
+        private fun isAllowedUrl(url: String): Boolean {
+            return try {
+                val uri = Uri.parse(url)
+                uri.scheme == "https" && uri.host?.lowercase() in ALLOWED_HOSTS
+            } catch (_: Exception) {
+                false
+            }
+        }
     }
 
     private lateinit var webView: WebView
@@ -102,10 +112,14 @@ class MainActivity : ComponentActivity() {
         setupSwipeRefresh()
         setupBackNavigation()
 
-        // Load URL
-        val urlToLoad = savedInstanceState?.getString(STATE_URL)
-            ?: intent?.data?.toString()
-            ?: BASE_URL
+        // Load URL — validate intent data against allowlist
+        val intentUrl = intent?.data?.toString()
+        val restoredUrl = savedInstanceState?.getString(STATE_URL)
+        val urlToLoad = when {
+            restoredUrl != null && isAllowedUrl(restoredUrl) -> restoredUrl
+            intentUrl != null && isAllowedUrl(intentUrl) -> intentUrl
+            else -> BASE_URL
+        }
 
         if (isNetworkAvailable()) {
             webView.loadUrl(urlToLoad)
@@ -178,11 +192,16 @@ class MainActivity : ComponentActivity() {
             )
             setPadding(48, 48, 48, 48)
 
+            val textColor = if (isSystemDarkTheme())
+                ContextCompat.getColor(this@MainActivity, R.color.on_surface_dark)
+            else
+                ContextCompat.getColor(this@MainActivity, R.color.on_surface_light)
+
             val titleView = TextView(this@MainActivity).apply {
                 text = getString(R.string.offline_title)
                 textSize = 24f
                 gravity = android.view.Gravity.CENTER
-                setTextColor(ContextCompat.getColor(this@MainActivity, R.color.on_surface_light))
+                setTextColor(textColor)
             }
             addView(titleView)
 
@@ -191,7 +210,7 @@ class MainActivity : ComponentActivity() {
                 textSize = 16f
                 gravity = android.view.Gravity.CENTER
                 setPadding(0, 24, 0, 48)
-                setTextColor(ContextCompat.getColor(this@MainActivity, R.color.on_surface_light))
+                setTextColor(textColor)
             }
             addView(messageView)
 
@@ -225,18 +244,7 @@ class MainActivity : ComponentActivity() {
             userAgentString = "$defaultUa PumperlyAndroid/$APP_VERSION"
         }
 
-        // Force dark mode if system is in dark theme
-        if (isSystemDarkTheme()) {
-            webView.settings.apply {
-                @Suppress("DEPRECATION")
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-                    isAlgorithmicDarkeningAllowed = true
-                } else if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-                    @Suppress("DEPRECATION")
-                    forceDark = WebSettings.FORCE_DARK_ON
-                }
-            }
-        }
+        applyDarkMode()
 
         webView.webViewClient = PumperlyWebViewClient(
             progressBar = progressBar,
@@ -293,6 +301,13 @@ class MainActivity : ComponentActivity() {
         origin: String,
         callback: GeolocationPermissions.Callback
     ) {
+        // Only grant geolocation to pumperly.com origins
+        val originHost = try { Uri.parse(origin).host?.lowercase() } catch (_: Exception) { null }
+        if (originHost !in ALLOWED_HOSTS) {
+            callback.invoke(origin, false, false)
+            return
+        }
+
         if (ContextCompat.checkSelfPermission(
                 this, Manifest.permission.ACCESS_FINE_LOCATION
             ) == PackageManager.PERMISSION_GRANTED
@@ -356,12 +371,23 @@ class MainActivity : ComponentActivity() {
                 Configuration.UI_MODE_NIGHT_YES
     }
 
+    @Suppress("DEPRECATION")
+    private fun applyDarkMode() {
+        val isDark = isSystemDarkTheme()
+        webView.settings.apply {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                isAlgorithmicDarkeningAllowed = isDark
+            } else if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                forceDark = if (isDark) WebSettings.FORCE_DARK_ON else WebSettings.FORCE_DARK_OFF
+            }
+        }
+    }
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
         intent.data?.let { uri ->
-            val host = uri.host?.lowercase()
-            if (host == "pumperly.com" || host == "www.pumperly.com") {
+            if (isAllowedUrl(uri.toString())) {
                 if (isNetworkAvailable()) {
                     hideOfflinePage()
                     webView.loadUrl(uri.toString())
@@ -370,6 +396,11 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        applyDarkMode()
     }
 
     override fun onSaveInstanceState(outState: Bundle) {

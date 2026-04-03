@@ -11,8 +11,11 @@ android {
         applicationId = "com.pumperly.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0.0"
+
+        val ciVersionName = findProperty("VERSION_NAME") as String? ?: "1.0.0"
+        val ciVersionCode = (findProperty("VERSION_CODE") as String?)?.toIntOrNull() ?: 1
+        versionCode = ciVersionCode
+        versionName = ciVersionName
     }
 
     signingConfigs {
@@ -33,6 +36,10 @@ android {
                 keyPassword = keyPass
             }
         }
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 
     buildTypes {
