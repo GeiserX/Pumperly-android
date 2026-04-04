@@ -5,9 +5,11 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- Lightning bolt icon centered in the adaptive icon safe zone (24dp inset each side) -->
+    <!-- Source of truth: Pumperly/src/lib/brand.ts (BOLT_PATH at 32x32).
+         This is the 108x108 equivalent, hand-tuned to integer coords for the
+         adaptive icon safe zone (24dp inset). -->
     <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M56.5,28L42,58h12l-4,22l18,-30h-13z" />
+        android:fillColor="#0c111b"
+        android:pathData="M61,33L45,58h11l-6,17L65,50h-11l7,-17z" />
 
 </vector>
