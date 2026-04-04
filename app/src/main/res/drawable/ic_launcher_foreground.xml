@@ -10,6 +10,6 @@
          adaptive icon safe zone (24dp inset). -->
     <path
         android:fillColor="#0c111b"
-        android:pathData="M61,33L45,58h11l-6,17L65,50h-11l7,-17z" />
+        android:pathData="M63,32L41,58h15l-6,19L69,50h-15l9,-18z" />
 
 </vector>
