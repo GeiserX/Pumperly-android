@@ -26,7 +26,7 @@ You assist developers working on Pumperly-android, a lightweight Android WebView
 - **Package:** `com.pumperly.app`
 - **Version source of truth:** `gradle.properties` (`VERSION_NAME`, `VERSION_CODE`). CI overrides via `-P` flags.
 - **Release workflow:** Push a `v*` tag -> GitHub Actions builds signed APK+AAB, creates GitHub Release with artifacts
-- **CI workflow:** On push to main or PR -> build debug APK + lint. Debug APK uploaded as artifact.
+- **CI workflow:** On push to main -> build debug APK + lint + signed release APK. On PR -> debug + lint only (no keystore access). Both APKs uploaded as artifacts. Always download `app-release` for installation (debug APK has different signature).
 - **Signing keystore:** JKS at `~/repos/personal/keystores/pumperly-release.jks` (alias: `pumperly`, password: `pumperly-release-2026`). Base64-encoded in GitHub secret `KEYSTORE_BASE64`.
 - **F-Droid:** MR !35851 at gitlab.com/fdroid/fdroiddata. Metadata at `metadata/com.pumperly.app.yml`. Uses `UpdateCheckData` to read version from `gradle.properties`. No `VercodeOperation` (VERSION_CODE is explicit).
 - **Web app:** pumperly.com (Next.js, deployed on watchtower via Portainer)
@@ -72,6 +72,20 @@ com.pumperly.app/
 - Uses `isAlgorithmicDarkeningAllowed` on Android 13+ (Tiramisu)
 - Falls back to deprecated `forceDark` on Android 10-12 (Q to S)
 - Error view text color adapts to system dark theme
+
+## APK Installation via adb
+
+- `adb install -r <apk>` installs over existing app **only if signatures match**
+- Debug and release APKs have different signing keys — installing debug over release (or vice versa) fails with `INSTALL_FAILED_UPDATE_INCOMPATIBLE`
+- To switch signing type: `adb uninstall com.pumperly.app` first (loses app data)
+- CI release APK matches the keystore used for GitHub Releases and F-Droid — always prefer `app-release` artifact
+
+## Geolocation
+
+- The webapp (pumperly.com) handles all geolocation logic — the Android app just grants WebView permission
+- `onGeolocationPermissionsShowPrompt` in `PumperlyWebChromeClient` requests Android location permission when the webapp calls `navigator.geolocation.getCurrentPosition()`
+- The webapp auto-triggers geolocation on map load via `onMapReady` callback (prompts if permission not yet decided)
+- Only pumperly.com origins are granted geolocation access (checked against `ALLOWED_HOSTS`)
 
 ## Known Limitations
 
