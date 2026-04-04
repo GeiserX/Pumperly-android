@@ -35,6 +35,8 @@ class MainActivity : ComponentActivity() {
         private const val BASE_URL = "https://pumperly.com"
         private val APP_VERSION = BuildConfig.VERSION_NAME
         private const val STATE_URL = "current_url"
+        private const val STATE_PENDING_URL = "pending_url"
+        private const val STATE_ERROR = "current_error"
         private val ALLOWED_HOSTS = setOf("pumperly.com", "www.pumperly.com")
 
         private fun isAllowedUrl(url: String): Boolean {
@@ -116,6 +118,11 @@ class MainActivity : ComponentActivity() {
         setupSwipeRefresh()
         setupBackNavigation()
 
+        // Restore state after process death
+        val restoredPendingUrl = savedInstanceState?.getString(STATE_PENDING_URL)
+        val restoredError = savedInstanceState?.getString(STATE_ERROR)
+            ?.let { name -> WebViewError.entries.find { it.name == name } }
+
         // Load URL — validate intent data against allowlist
         val intentUrl = intent?.data?.toString()
         val restoredUrl = savedInstanceState?.getString(STATE_URL)
@@ -125,7 +132,11 @@ class MainActivity : ComponentActivity() {
             else -> BASE_URL
         }
 
-        if (isNetworkAvailable()) {
+        if (restoredError != null) {
+            pendingUrl = restoredPendingUrl ?: urlToLoad
+            isSplashReady = true
+            showErrorPage(restoredError)
+        } else if (isNetworkAvailable()) {
             webView.loadUrl(urlToLoad)
             isSplashReady = true
         } else {
@@ -450,6 +461,8 @@ class MainActivity : ComponentActivity() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putString(STATE_URL, webView.url)
+        pendingUrl?.let { outState.putString(STATE_PENDING_URL, it) }
+        currentError?.let { outState.putString(STATE_ERROR, it.name) }
     }
 
     override fun onResume() {
