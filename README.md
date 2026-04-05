@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/images/banner.svg" alt="Pumperly Android banner" width="900"/>
+</p>
+
 <h1 align="center">Pumperly for Android</h1>
 
 <p align="center">
