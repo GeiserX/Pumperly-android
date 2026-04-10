@@ -20,20 +20,6 @@ reviews:
     - "!**/*.apk"
     - "!**/*.aab"
     - "!**/gradle-wrapper.jar"
-  path_instructions:
-    - path: "app/src/main/java/**"
-      instructions: |
-        Focus on WebView security: proper URL validation, JavaScript interface safety.
-        Verify input validation and sanitization on all user-supplied data.
-        Check for proper error handling — never leak internal details.
-    - path: "app/src/main/AndroidManifest.xml"
-      instructions: |
-        Verify permissions are minimal and justified.
-        Check exported components are intentional.
-    - path: "*.gradle*"
-      instructions: |
-        Check dependency versions are pinned, not dynamic (+).
-        Verify minSdk and targetSdk are appropriate.
   tools:
     gitleaks:
       enabled: true
