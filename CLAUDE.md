@@ -1,20 +1,20 @@
 # CLAUDE.md — Pumperly Android
 
 ## Overview
-Official Android app for Pumperly, the open-source fuel and EV route planner. A lightweight WebView shell wrapping pumperly.com with native geolocation, deep links, offline fallback, and dark mode support.
+Official Android app for Pumperly, the open-source fuel and EV route planner. A lightweight WebView shell wrapping pumperly.com with native geolocation, deep links, offline fallback, dark mode support, and strict security model. No Compose, no heavy dependencies — minimal APK size.
 
 ## Tech Stack
-- Kotlin
-- Android WebView
-- Gradle (build.gradle.kts)
-- Fastlane (automated builds/releases)
-- Google Play distribution
+- Kotlin 2.1+
+- Android Views (NOT Compose — WebView app with programmatic layout)
+- AndroidX WebKit, SwipeRefreshLayout, SplashScreen
+- Android SDK 26+ (minSdk), compileSdk 36, targetSdk 36
+- Gradle with version catalogs (`libs.versions.toml`)
 
 ## Development
+
 ```bash
 # Build debug APK
 ./gradlew assembleDebug
-# APK at app/build/outputs/apk/debug/app-debug.apk
 
 # Signed release build
 ./gradlew assembleRelease \
@@ -24,16 +24,77 @@ Official Android app for Pumperly, the open-source fuel and EV route planner. A 
   -PPUMPERLY_KEY_PASSWORD=changeme
 ```
 
+**No local Java on macOS dev machine** — all compilation is via GitHub Actions CI. Lint baseline at `app/lint-baseline.xml` — new lint errors are fatal.
+
+### Repository & Infrastructure
+
+- **Package:** `com.pumperly.app`
+- **Version source of truth:** `gradle.properties` (`VERSION_NAME`, `VERSION_CODE`). CI overrides via `-P` flags.
+- **Release workflow:** Push a `v*` tag -> GitHub Actions builds signed APK+AAB, creates GitHub Release
+- **CI workflow:** On push to main -> debug APK + lint + signed release APK. On PR -> debug + lint only.
+- **Signing keystore:** JKS at `~/repos/personal/keystores/pumperly-release.jks` (alias: `pumperly`, password: `pumperly-release-2026`). Base64 in GitHub secret `KEYSTORE_BASE64`.
+- **F-Droid:** MR !35851 at gitlab.com/fdroid/fdroiddata. Metadata at `metadata/com.pumperly.app.yml`.
+- **Web app:** pumperly.com (Next.js, source of truth for all features)
+
 ## Architecture
-- `app/` — main Android application module
-- `fastlane/` — automated build and release pipelines
-- `gradle/` — Gradle wrapper and version catalog
-- `docs/` — documentation and images
+
+```
+com.pumperly.app/
+  MainActivity.kt      # Single activity: WebView setup, permissions, error handling, state restore
+  PumperlyWebView.kt   # WebViewClient + WebChromeClient (navigation, errors, geolocation, file upload)
+```
+
+### Key Components
+
+- **MainActivity**: Builds entire UI programmatically (LinearLayout root -> ProgressBar + SwipeRefreshLayout[WebView] + ErrorView). Handles geolocation permission requests, file chooser, back navigation, dark mode, edge-to-edge, and splash screen.
+- **PumperlyWebViewClient**: Keeps pumperly.com navigation in-app, opens external URLs in system browser. Reports errors (OFFLINE, SSL, PAGE) to MainActivity for error page display.
+- **PumperlyWebChromeClient**: Progress bar updates, geolocation permission prompts, file input chooser.
+- **WebViewError enum**: Three error types with distinct UI (OFFLINE=retry, SSL=go back, PAGE=retry).
+
+### Security Model
+
+- `ALLOWED_HOSTS` allowlist for all URL loading and geolocation grants
+- `mixedContentMode = MIXED_CONTENT_NEVER_ALLOW`
+- `allowFileAccess = false`, `allowContentAccess = false`
+- SSL errors always cancelled, never bypassed
+- User agent includes `PumperlyAndroid/{version}` for server-side detection
+
+### Dark Mode
+
+- Uses `isAlgorithmicDarkeningAllowed` on Android 13+ (Tiramisu)
+- Falls back to deprecated `forceDark` on Android 10-12 (Q to S)
+- Error view text color adapts to system dark theme
+
+### Geolocation
+
+- The webapp (pumperly.com) handles all geolocation logic — the Android app just grants WebView permission
+- `onGeolocationPermissionsShowPrompt` requests Android location permission when webapp calls `navigator.geolocation.getCurrentPosition()`
+- Only pumperly.com origins are granted geolocation access (checked against `ALLOWED_HOSTS`)
+
+### State Management
+
+- State must survive process death: save/restore `pendingUrl`, `currentError`, and `webView.url` via `onSaveInstanceState`
+- All UI is built programmatically in `buildLayout()` / `buildErrorView()` — no XML layouts
+- URL allowlist enforced in `ALLOWED_HOSTS` — only pumperly.com HTTPS URLs load in-app
+- External URLs open in system browser via `shouldOverrideUrlLoading`
 
 ## Key Rules
 - Never hardcode signing credentials; pass via Gradle properties or environment variables
 - The web version (pumperly.com) is the single source of truth for features
 - App updates should be minimal — most changes land in the main Pumperly repo
 - License: GPL-3.0
+
+## APK Installation via adb
+
+- `adb install -r <apk>` installs over existing app **only if signatures match**
+- Debug and release APKs have different signing keys — installing one over the other fails
+- To switch signing type: `adb uninstall com.pumperly.app` first (loses app data)
+- CI release APK matches the keystore for GitHub Releases and F-Droid — always prefer `app-release`
+
+## Known Limitations
+
+- `fileUploadCallback` and `pendingGeolocationCallback` are in-memory only — lost on process death. Low risk: user just retries.
+- No offline/PWA support — shows error page when offline
+- Single-host only — no self-hosted instance support in the app
 
 *Generated by [LynxPrompt](https://lynxprompt.com) CLI*
