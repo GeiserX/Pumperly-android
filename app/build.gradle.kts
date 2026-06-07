@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = "com.pumperly.app"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.pumperly.app"
