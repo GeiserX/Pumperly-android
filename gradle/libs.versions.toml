@@ -4,7 +4,7 @@ kotlin = "2.4.0"
 coreKtx = "1.19.0"
 coreSplashscreen = "1.2.0"
 activityKtx = "1.13.0"
-webkit = "1.16.0"
+webkit = "1.17.0"
 swiperefreshlayout = "1.2.0"
 
 [libraries]
