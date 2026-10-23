@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Widget «Lo más barato cerca» y la pantalla del mismo nombre. -->
+    <string name="widget_title">Lo más barato cerca</string>
+    <string name="widget_description">Las gasolineras más baratas cerca de ti para tu combustible.</string>
+    <string name="widget_needs_location">Abre Pumperly y permite la ubicación para ver las gasolineras cercanas.</string>
+    <string name="widget_empty">No hay gasolineras con este combustible a menos de 10 km.</string>
+    <string name="widget_unavailable">Los precios no están disponibles ahora. Se volverá a intentar en breve.</string>
+    <string name="widget_loading">Actualizando…</string>
+    <!-- Filas de la copia sin conexión, con la hora en que se obtuvieron. -->
+    <string name="widget_as_of">Último dato: %1$s</string>
+
+    <string name="cheapest_loading">Buscando gasolineras cerca de ti…</string>
+    <string name="cheapest_change_fuel">Cambiar combustible</string>
+    <string name="cheapest_retry">Reintentar</string>
+    <string name="cheapest_open_app">Abrir Pumperly</string>
+</resources>

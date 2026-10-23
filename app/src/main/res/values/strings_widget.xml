@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Home-screen widget "Cheapest nearby" and the screen of the same name. -->
+    <string name="widget_title">Cheapest nearby</string>
+    <string name="widget_description">The cheapest stations near you for your fuel.</string>
+    <string name="widget_needs_location">Open Pumperly and allow location to see stations near you.</string>
+    <string name="widget_empty">No stations with this fuel within 10 km.</string>
+    <string name="widget_unavailable">Prices are unavailable right now. Trying again soon.</string>
+    <string name="widget_loading">Updating…</string>
+    <!-- Rows from the offline copy, with the time they were fetched. -->
+    <string name="widget_as_of">As of %1$s</string>
+
+    <string name="cheapest_loading">Finding stations near you…</string>
+    <string name="cheapest_change_fuel">Change fuel</string>
+    <string name="cheapest_retry">Retry</string>
+    <string name="cheapest_open_app">Open Pumperly</string>
+</resources>
