@@ -1,0 +1,6 @@
+- Home-screen widget with the cheapest stations near you (2x2 and 4x2)
+- "Cheapest nearby" screen from the app icon
+- Offline: the last known stations when the site cannot be reached
+- Choose the widget fuel on first launch, from the widget or the app icon
+- Spanish and English, following the per-app language setting
+- Safer link handling and recovery when the WebView crashes

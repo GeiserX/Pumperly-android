@@ -1,1 +1,1 @@
-Open-source fuel and EV route planner with real-time prices
+Fuel and EV route planner with live prices and a cheapest-nearby widget

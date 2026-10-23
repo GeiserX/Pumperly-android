@@ -41,6 +41,7 @@ The app is not on Google Play yet. To build it yourself, see [Development](docs/
 
 - [How it works](docs/how-it-works.md): the WebView shell and what stays native
 - [Development](docs/development.md): debug build, signed release build, version properties
+- [Privacy policy](PRIVACY.md): what the app sends, stores and asks for
 
 ## Related projects
 
