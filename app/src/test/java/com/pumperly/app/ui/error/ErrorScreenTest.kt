@@ -7,7 +7,7 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -74,7 +74,7 @@ class ErrorScreenTest {
         show(ErrorScreenKind.OFFLINE, snapshot())
         compose.onNodeWithText("No Connection").assertIsDisplayed()
         compose.onNodeWithTag(TAG_HEADER).assertIsDisplayed()
-        val expected = OfflineStations.header(app.resources, snapshot(), now.plusSeconds(60), Locale.getDefault(), madrid)
+        val expected = OfflineStations.header(app.resources, snapshot(), now.plusSeconds(60), app.resources.configuration.locales[0], madrid)
         compose.onNodeWithText(expected).assertIsDisplayed()
         assertEquals(listOf("4711", "3218", "4508"), rowTags())
         // Robolectric's default screen is 320x470 dp, so the button sits below the rows.

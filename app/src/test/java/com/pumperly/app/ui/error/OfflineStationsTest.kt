@@ -49,7 +49,7 @@ class OfflineStationsTest {
         val header = OfflineStations.header(app.resources, snapshot(), now.plusSeconds(60), Locale.US, madrid)
         assertTrue(header, header.startsWith("Last known cheapest nearby, as of "))
         assertFalse(header, header.contains("%"))
-        assertTrue(header, header.endsWith("4:13 PM") || header.endsWith("4:13 PM"))
+        assertTrue(header, header.endsWith("4:13\u202FPM") || header.endsWith("4:13 PM"))
     }
 
     @Test
