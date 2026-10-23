@@ -65,7 +65,21 @@ class NearestApiTest {
     }
 
     @Test
-    fun theDefaultClientNamesTheAppVersion() {
-        assertEquals("PumperlyAndroid/${AppConfig.appVersion} (Widget)", UserAgent.widgetUserAgent(AppConfig.appVersion))
+    fun theDefaultClientSendsTheAppVersionUserAgent() = runTest {
+        HttpNearestApi(base = "http://127.0.0.1:${server.address.port}").fetchNearest(40.4, -3.7, FuelType.B7)
+        assertEquals(UserAgent.widgetUserAgent(AppConfig.appVersion), requests.single().second["User-Agent"])
+    }
+
+    @Test
+    fun aRedirectIsFollowedLikeOnIos() = runTest {
+        server.createContext("/moved") { exchange ->
+            exchange.responseHeaders.add("Location", "http://127.0.0.1:${server.address.port}/api/stations/nearest?moved=1")
+            exchange.sendResponseHeaders(301, -1)
+            exchange.close()
+        }
+        val stations = HttpNearestApi(base = "http://127.0.0.1:${server.address.port}/moved", userAgent = "UA")
+            .fetchNearest(40.4, -3.7, FuelType.B7)
+        assertEquals(5, stations.size)
+        assertEquals("/api/stations/nearest?moved=1", requests.single().first)
     }
 }

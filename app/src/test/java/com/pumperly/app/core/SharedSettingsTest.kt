@@ -1,6 +1,5 @@
 package com.pumperly.app.core
 
-import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.edit
 import java.io.File
 import java.nio.file.Files
@@ -23,7 +22,7 @@ class SharedSettingsTest {
     private lateinit var scope: CoroutineScope
     private lateinit var settings: SharedSettings
     private val store by lazy {
-        PreferenceDataStoreFactory.create(scope = scope) { File(directory, "settings.preferences_pb") }
+        SharedSettings.store(scope) { File(directory, "settings.preferences_pb") }
     }
 
     @Before
@@ -44,6 +43,15 @@ class SharedSettingsTest {
         assertEquals(FuelType.B7, settings.fuel())
         settings.setFuel(FuelType.EV)
         assertEquals(FuelType.EV, SharedSettings(store).fuel())
+    }
+
+    @Test
+    fun aCorruptFileReadsAsDefaults() = runTest {
+        File(directory, "settings.preferences_pb").writeBytes(byteArrayOf(1, 2, 3, 4, 5, 6))
+        assertEquals(FuelType.B7, settings.fuel())
+        assertFalse(settings.hasChosenFuel())
+        settings.setFuel(FuelType.E5)
+        assertEquals(FuelType.E5, settings.fuel())
     }
 
     @Test

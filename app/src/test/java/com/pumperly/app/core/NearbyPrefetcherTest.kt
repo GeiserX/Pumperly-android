@@ -1,7 +1,6 @@
 package com.pumperly.app.core
 
 import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import java.io.File
 import java.io.IOException
@@ -36,7 +35,7 @@ class NearbyPrefetcherTest {
     fun setUp() {
         directory = Files.createTempDirectory("prefetcher").toFile()
         scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-        settings = SharedSettings(PreferenceDataStoreFactory.create(scope = scope) { File(directory, "s.preferences_pb") })
+        settings = SharedSettings(SharedSettings.store(scope) { File(directory, "s.preferences_pb") })
         cache = StationCache(directory)
     }
 

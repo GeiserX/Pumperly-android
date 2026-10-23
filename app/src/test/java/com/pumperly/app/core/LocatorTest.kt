@@ -6,6 +6,7 @@ import android.location.Location
 import android.location.LocationManager
 import androidx.test.core.app.ApplicationProvider
 import kotlinx.coroutines.test.runTest
+import java.time.Duration
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -59,5 +60,13 @@ class LocatorTest {
         }
         shadowOf(manager).setLastKnownLocation(LocationManager.PASSIVE_PROVIDER, old)
         assertEquals(Locator.Outcome.Unavailable, Locator.locate(app))
+    }
+
+    @Test
+    fun noAnswerFromTheProviderTimesOutAsUnavailable() = runTest {
+        shadowOf(app).grantPermissions(Manifest.permission.ACCESS_FINE_LOCATION)
+        shadowOf(manager).setProviderEnabled(LocationManager.NETWORK_PROVIDER, true)
+        shadowOf(manager).setProviderEnabled(LocationManager.GPS_PROVIDER, false)
+        assertEquals(Locator.Outcome.Unavailable, Locator.locate(app, Duration.ofMillis(300)))
     }
 }

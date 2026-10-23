@@ -28,7 +28,6 @@ class HttpNearestApi(
             try {
                 connection.connectTimeout = timeoutMillis
                 connection.readTimeout = timeoutMillis
-                connection.instanceFollowRedirects = false
                 connection.setRequestProperty("Accept", "application/json")
                 connection.setRequestProperty("User-Agent", userAgent)
                 val status = connection.responseCode

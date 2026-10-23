@@ -2,20 +2,30 @@ package com.pumperly.app.core
 
 import android.content.Context
 import androidx.datastore.core.DataStore
+import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
+import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import java.io.File
 import java.time.Duration
 import java.time.Instant
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
-private val Context.sharedSettingsStore: DataStore<Preferences> by preferencesDataStore(name = "shared_settings")
+// A corrupt file reads as empty settings (default fuel, first run) instead of throwing on every
+// read until the user clears app data. iOS UserDefaults never fails that way either.
+private val Context.sharedSettingsStore: DataStore<Preferences> by preferencesDataStore(
+    name = "shared_settings",
+    corruptionHandler = ReplaceFileCorruptionHandler { emptyPreferences() },
+)
 
 /** Settings the app writes and the widget and background refresh read. Same keys as iOS. */
 class SharedSettings(private val store: DataStore<Preferences>) {
@@ -81,5 +91,13 @@ class SharedSettings(private val store: DataStore<Preferences>) {
 
         /** The one settings store of the app process. */
         fun forContext(context: Context): SharedSettings = SharedSettings(context.applicationContext.sharedSettingsStore)
+
+        /** A store at [file] that recovers from corruption the same way the app's store does. For tests. */
+        internal fun store(scope: CoroutineScope, file: () -> File): DataStore<Preferences> =
+            PreferenceDataStoreFactory.create(
+                corruptionHandler = ReplaceFileCorruptionHandler { emptyPreferences() },
+                scope = scope,
+                produceFile = file,
+            )
     }
 }
