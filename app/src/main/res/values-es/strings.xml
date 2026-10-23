@@ -10,4 +10,13 @@
     <string name="page_error_title">Página no disponible</string>
     <string name="page_error_message">No se ha podido cargar la página.</string>
     <string name="page_error_retry">Reintentar</string>
+
+    <!-- Atajo «Lo más barato cerca» y los nombres con los que el asistente lo reconoce. -->
+    <string name="shortcut_cheapest_short">Lo más barato</string>
+    <string name="shortcut_cheapest_long">Lo más barato cerca</string>
+    <string-array name="shortcut_cheapest_feature">
+        <item>lo más barato cerca</item>
+        <item>gasolinera más barata</item>
+        <item>combustible más barato cerca</item>
+    </string-array>
 </resources>

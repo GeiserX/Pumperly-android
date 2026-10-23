@@ -15,15 +15,17 @@ import android.webkit.GeolocationPermissions
 import android.webkit.ValueCallback
 import android.webkit.WebSettings
 import android.webkit.WebView
-import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.ProgressBar
-import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.ComponentActivity
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.ComposeView
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.ViewCompat
@@ -38,6 +40,10 @@ import com.pumperly.app.core.StationCache
 import com.pumperly.app.core.UserAgent
 import com.pumperly.app.shell.NavigationPolicy
 import com.pumperly.app.shell.ShellError
+import com.pumperly.app.ui.error.ErrorScreen
+import com.pumperly.app.ui.error.ErrorScreenKind
+import com.pumperly.app.ui.settings.SettingsActivity
+import com.pumperly.app.widget.WidgetRefreshWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -63,10 +69,9 @@ class MainActivity : ComponentActivity() {
     // SwipeRefreshLayout remembers its first child for good, so the WebView sits in this frame
     // and can be swapped after a renderer crash without leaving the refresh layout on a dead view.
     private lateinit var webViewFrame: FrameLayout
-    private lateinit var errorView: LinearLayout
-    private lateinit var errorTitle: TextView
-    private lateinit var errorMessage: TextView
-    private lateinit var errorButton: Button
+    private lateinit var errorView: ComposeView
+    // What the Compose error screen shows; null while the page is on screen.
+    private var shownError by mutableStateOf<ShellError?>(null)
 
     private var fileUploadCallback: ValueCallback<Array<Uri>>? = null
     private var pendingGeolocationOrigin: String? = null
@@ -125,11 +130,12 @@ class MainActivity : ComponentActivity() {
         val rootLayout = buildLayout()
         setContentView(rootLayout)
 
-        // Apply window insets for edge-to-edge
+        // Apply window insets for edge-to-edge. The root pads for the system bars and consumes
+        // them, so the Compose error screen does not pad a second time.
         ViewCompat.setOnApplyWindowInsetsListener(rootLayout) { view, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             view.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
+            WindowInsetsCompat.CONSUMED
         }
 
         nightMode = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
@@ -161,6 +167,16 @@ class MainActivity : ComponentActivity() {
             pendingUrl = urlToLoad
             isSplashReady = true
             showErrorPage(ShellError.OFFLINE)
+        }
+
+        // First launch: the widget fuel picker opens over the app until it has been left once.
+        // A process restored from saved state has already been past this point.
+        if (savedInstanceState == null) {
+            lifecycleScope.launch {
+                if (SettingsActivity.needsFirstRun(settings)) {
+                    startActivity(SettingsActivity.intent(this@MainActivity))
+                }
+            }
         }
     }
 
@@ -240,43 +256,25 @@ class MainActivity : ComponentActivity() {
         if (currentError == null) webView.loadUrl(url) else pendingUrl = url
     }
 
-    private fun buildErrorView(): LinearLayout {
-        return LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            gravity = android.view.Gravity.CENTER
-            visibility = View.GONE
-            layoutParams = LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                0,
-                1f
-            )
-            setPadding(48, 48, 48, 48)
-
-            val textColor = if (isSystemDarkTheme())
-                ContextCompat.getColor(this@MainActivity, R.color.on_surface_dark)
-            else
-                ContextCompat.getColor(this@MainActivity, R.color.on_surface_light)
-
-            errorTitle = TextView(this@MainActivity).apply {
-                textSize = 24f
-                gravity = android.view.Gravity.CENTER
-                setTextColor(textColor)
+    /** The native error screen (offline with the cached stations, certificate, page), hidden by default. */
+    private fun buildErrorView(): ComposeView = ComposeView(this).apply {
+        visibility = View.GONE
+        layoutParams = LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            0,
+            1f
+        )
+        setContent {
+            shownError?.let { error ->
+                ErrorScreen(kind = error.screenKind(), onAction = ::handleErrorAction)
             }
-            addView(errorTitle)
-
-            errorMessage = TextView(this@MainActivity).apply {
-                textSize = 16f
-                gravity = android.view.Gravity.CENTER
-                setPadding(0, 24, 0, 48)
-                setTextColor(textColor)
-            }
-            addView(errorMessage)
-
-            errorButton = Button(this@MainActivity).apply {
-                setOnClickListener { handleErrorAction() }
-            }
-            addView(errorButton)
         }
+    }
+
+    private fun ShellError.screenKind(): ErrorScreenKind = when (this) {
+        ShellError.OFFLINE -> ErrorScreenKind.OFFLINE
+        ShellError.SSL -> ErrorScreenKind.SSL
+        ShellError.PAGE -> ErrorScreenKind.PAGE
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -413,15 +411,14 @@ class MainActivity : ComponentActivity() {
 
     private fun showErrorPage(type: ShellError) {
         currentError = type
-        errorTitle.text = getString(type.title)
-        errorMessage.text = getString(type.message)
-        errorButton.text = getString(type.action)
+        shownError = type
         swipeRefresh.visibility = View.GONE
         errorView.visibility = View.VISIBLE
     }
 
     private fun hideErrorPage() {
         currentError = null
+        shownError = null
         errorView.visibility = View.GONE
         swipeRefresh.visibility = View.VISIBLE
     }
@@ -455,11 +452,6 @@ class MainActivity : ComponentActivity() {
         val network = cm.activeNetwork ?: return false
         val capabilities = cm.getNetworkCapabilities(network) ?: return false
         return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-    }
-
-    private fun isSystemDarkTheme(): Boolean {
-        return (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
-                Configuration.UI_MODE_NIGHT_YES
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -527,6 +519,8 @@ class MainActivity : ComponentActivity() {
                 }
                 Locator.Outcome.Unavailable -> Unit
             }
+            // The widget redraws from what was just saved. Without a widget the worker does nothing.
+            WidgetRefreshWorker.refreshNow(this@MainActivity)
         }
     }
 

@@ -6,7 +6,5 @@
     <color name="black">#FF000000</color>
     <color name="surface_light">#FFFFFFFF</color>
     <color name="surface_dark">#FF121212</color>
-    <color name="on_surface_light">#FF1C1B1F</color>
-    <color name="on_surface_dark">#FFE6E1E5</color>
     <color name="splash_background">#FF34D399</color>
 </resources>

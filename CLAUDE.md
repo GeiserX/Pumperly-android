@@ -1,7 +1,7 @@
 # CLAUDE.md — Pumperly Android
 
 ## Overview
-Official Android app for Pumperly, the open-source fuel and EV route planner. A WebView shell wrapping pumperly.com with native geolocation, deep links, offline fallback, dark mode support, and strict security model. New native screens (settings, offline, cheapest nearby) are written in Compose and the planned home-screen widget in Glance; no Google Play services, so an F-Droid build stays possible.
+Official Android app for Pumperly, the open-source fuel and EV route planner. A WebView shell wrapping pumperly.com with native geolocation, deep links, offline fallback, dark mode support, and strict security model. Native screens (widget fuel picker, offline stations, cheapest nearby) are written in Compose and the home-screen widget in Glance; no Google Play services, so an F-Droid build stays possible.
 
 ## Tech Stack
 - Kotlin 2.4.0, compiled by AGP 9's built-in Kotlin. The `kotlin-android` plugin is declared at the root with `apply false` only to pin the compiler version; `:app` applies the Compose and serialization compiler plugins, which must match it.
@@ -50,16 +50,25 @@ Read test counts from `app/build/test-results/testDebugUnitTest/*.xml` (the scri
 
 ```
 com.pumperly.app/
-  MainActivity.kt      # Single activity: WebView setup, permissions, error handling, state restore
-  PumperlyWebView.kt   # WebViewClient + WebChromeClient (navigation, errors, geolocation, file upload)
+  MainActivity.kt          # Web shell: WebView setup, permissions, error handling, state restore
+  PumperlyWebView.kt       # WebViewClient + WebChromeClient (navigation, errors, geolocation, file upload)
+  PumperlyApplication.kt   # Redraws the widget when the fuel changes
+  core/                    # Settings, fuel types, location, nearest-stations API, station cache, prefetcher
+  shell/                   # Navigation policy and ShellError
+  ui/settings/             # Fuel picker (SettingsActivity)
+  ui/error/                # Error screen with the cached stations
+  ui/cheapest/             # Cheapest nearby screen (CheapestNearbyActivity)
+  widget/                  # Glance home-screen widget, its state, refresh worker and tap intents
 ```
 
 ### Key Components
 
-- **MainActivity**: Builds entire UI programmatically (LinearLayout root -> ProgressBar + SwipeRefreshLayout[WebView] + ErrorView). Handles geolocation permission requests, file chooser, back navigation, dark mode, edge-to-edge, and splash screen.
+- **MainActivity**: Builds the shell programmatically (LinearLayout root -> ProgressBar + SwipeRefreshLayout[FrameLayout[WebView]] + a ComposeView hosting `ui.error.ErrorScreen`). Handles geolocation permission requests, file chooser, back navigation, dark mode, edge-to-edge and the splash screen; opens `SettingsActivity` on first launch and calls `WidgetRefreshWorker.refreshNow` after each foreground fix.
+- **PumperlyApplication**: implements `WidgetFuelListener`, so a fuel change in the picker redraws the widget.
+- **Manifest**: declares `SettingsActivity` (not exported, singleTop), `CheapestNearbyActivity` (exported for the OPEN_APP_FEATURE capability), the `CheapestNearbyReceiver` widget provider, the `res/xml/shortcuts.xml` launcher shortcuts and `localeConfig`.
 - **PumperlyWebViewClient**: Keeps pumperly.com navigation in-app, opens external URLs in system browser. Reports errors (OFFLINE, SSL, PAGE) to MainActivity for error page display.
 - **PumperlyWebChromeClient**: Progress bar updates, geolocation permission prompts, file input chooser.
-- **WebViewError enum**: Three error types with distinct UI (OFFLINE=retry, SSL=go back, PAGE=retry).
+- **ShellError enum**: Three error types with distinct UI (OFFLINE=retry with the cached stations, SSL=go back, PAGE=retry).
 
 ### Security Model
 
@@ -71,9 +80,8 @@ com.pumperly.app/
 
 ### Dark Mode
 
-- Uses `isAlgorithmicDarkeningAllowed` on Android 13+ (Tiramisu)
-- Falls back to deprecated `forceDark` on Android 10-12 (Q to S)
-- Error view text color adapts to system dark theme
+- No WebView darkening: pumperly.com follows `prefers-color-scheme` from the app's DayNight theme; a light/dark switch reloads the page.
+- The Compose screens pick their light or dark colours from the system theme
 
 ### Geolocation
 
@@ -84,7 +92,7 @@ com.pumperly.app/
 ### State Management
 
 - State must survive process death: save/restore `pendingUrl`, `currentError`, and `webView.url` via `onSaveInstanceState`
-- All UI is built programmatically in `buildLayout()` / `buildErrorView()` — no XML layouts
+- The shell is built programmatically in `buildLayout()` / `buildErrorView()`, no XML layouts; native screens are Compose
 - URL allowlist enforced in `ALLOWED_HOSTS` — only pumperly.com HTTPS URLs load in-app
 - External URLs open in system browser via `shouldOverrideUrlLoading`
 
@@ -104,7 +112,7 @@ com.pumperly.app/
 ## Known Limitations
 
 - `fileUploadCallback` and `pendingGeolocationCallback` are in-memory only — lost on process death. Low risk: user just retries.
-- No offline/PWA support — shows error page when offline
+- No offline/PWA support for the site itself: offline, the app shows up to three stations from the last cached lookup
 - Single-host only — no self-hosted instance support in the app
 
 *Generated by [LynxPrompt](https://lynxprompt.com) CLI*
