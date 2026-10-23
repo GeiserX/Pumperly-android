@@ -1,6 +1,8 @@
 package com.pumperly.app.core
 
+import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.datastore.preferences.core.Preferences
 import java.io.File
 import java.io.IOException
 import java.nio.file.Files
@@ -10,9 +12,12 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Before
@@ -90,5 +95,19 @@ class NearbyPrefetcherTest {
         cache.save(old)
         prefetcher { _, _, _ -> throw IOException("offline") }.positionDelivered(40.4169, -3.7035, now)!!.join()
         assertEquals(old, cache.load(now = now))
+    }
+
+    @Test
+    fun aBrokenSettingsStoreDoesNotEscapeTheJob() = runTest {
+        val broken = object : DataStore<Preferences> {
+            override val data: Flow<Preferences> = flow { throw IOException("corrupt preferences") }
+            override suspend fun updateData(transform: suspend (Preferences) -> Preferences): Preferences =
+                throw IOException("corrupt preferences")
+        }
+        val job = NearbyPrefetcher(SharedSettings(broken), cache, fixtureApi, scope).positionDelivered(40.4169, -3.7035, now)!!
+        job.join()
+        // A job that threw ends cancelled; this one must end normally, with nothing fetched.
+        assertFalse(job.isCancelled)
+        assertEquals(0, calls.size)
     }
 }

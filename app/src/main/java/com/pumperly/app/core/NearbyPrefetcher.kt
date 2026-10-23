@@ -37,18 +37,13 @@ class NearbyPrefetcher(
         return scope.launch {
             try {
                 val fuel = settings.fuel()
-                val stations = try {
-                    api.fetchNearest(latitude, longitude, fuel)
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (_: Exception) {
-                    return@launch
-                }
-                try {
-                    cache.save(StationCache.Snapshot(now, fuel, latitude, longitude, stations))
-                } catch (_: java.io.IOException) {
-                    // A full disk only costs the offline copy; the next fix tries again.
-                }
+                val stations = api.fetchNearest(latitude, longitude, fuel)
+                cache.save(StationCache.Snapshot(now, fuel, latitude, longitude, stations))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                // A failed settings read, fetch or write only costs this offline copy; the old
+                // cache stays and a later fix tries again. Nothing escapes into the caller's scope.
             } finally {
                 inFlight.set(false)
             }
