@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Offline screen: the last stations fetched near the user. %1$s is a time, or a weekday and a time. -->
+    <string name="offline_header">Last known cheapest nearby, as of %1$s</string>
+    <string name="offline_header_ev">Last known chargers nearby, as of %1$s</string>
+    <!-- Button on each cached station row: opens it in a map app. -->
+    <string name="offline_open_map">Map</string>
+    <!-- Spoken label of that button. %1$s is the station name. -->
+    <string name="offline_open_map_description">Open %1$s in a map app</string>
+</resources>
