@@ -50,7 +50,10 @@ TASKS="${*:-testDebugUnitTest}"
 # .beads is excluded: tracker data never leaves this machine, not even to a
 # private host.
 echo "==> syncing $HERE -> $HOST:$ROOT/src"
-ssh "$HOST" "mkdir -p '$ROOT/src' '$ROOT/sdk' '$ROOT/gradle'"
+# Results from an earlier run must never be read as this run's, here or there.
+REPORT_DIRS="app/build/test-results app/build/reports"
+ssh "$HOST" "mkdir -p '$ROOT/src' '$ROOT/sdk' '$ROOT/gradle' && cd '$ROOT/src' && rm -rf $REPORT_DIRS"
+(cd "$HERE" && rm -rf $REPORT_DIRS)
 rsync -a --delete \
   --exclude '.git' --exclude '.beads' --exclude 'build/' --exclude '.gradle' \
   --exclude 'scripts/remote-gradle.env' --exclude 'local.properties' \
@@ -67,7 +70,7 @@ ssh "$HOST" "docker run --rm \
 
 # Bring back the test and lint reports, pass or fail, so the JUnit XML can be
 # read here. A BUILD SUCCESSFUL line alone does not say how many tests ran.
-for dir in app/build/test-results app/build/reports; do
+for dir in $REPORT_DIRS; do
   if ssh "$HOST" "test -d '$ROOT/src/$dir'"; then
     echo "==> fetching $dir"
     mkdir -p "$HERE/$dir"

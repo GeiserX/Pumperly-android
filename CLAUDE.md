@@ -1,7 +1,7 @@
 # CLAUDE.md — Pumperly Android
 
 ## Overview
-Official Android app for Pumperly, the open-source fuel and EV route planner. A WebView shell wrapping pumperly.com with native geolocation, deep links, offline fallback, dark mode support, and strict security model. Native screens (settings, offline, cheapest nearby) are Compose and the home-screen widget is Glance; no Google Play services, so an F-Droid build stays possible.
+Official Android app for Pumperly, the open-source fuel and EV route planner. A WebView shell wrapping pumperly.com with native geolocation, deep links, offline fallback, dark mode support, and strict security model. New native screens (settings, offline, cheapest nearby) are written in Compose and the planned home-screen widget in Glance; no Google Play services, so an F-Droid build stays possible.
 
 ## Tech Stack
 - Kotlin 2.4.0, compiled by AGP 9's built-in Kotlin. The `kotlin-android` plugin is declared at the root with `apply false` only to pin the compiler version; `:app` applies the Compose and serialization compiler plugins, which must match it.
