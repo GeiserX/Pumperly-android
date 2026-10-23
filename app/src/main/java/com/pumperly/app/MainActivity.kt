@@ -35,6 +35,7 @@ import com.pumperly.app.core.Locator
 import com.pumperly.app.core.NearbyPrefetcher
 import com.pumperly.app.core.SharedSettings
 import com.pumperly.app.core.StationCache
+import com.pumperly.app.core.UserAgent
 import com.pumperly.app.shell.NavigationPolicy
 import com.pumperly.app.shell.ShellError
 import kotlinx.coroutines.CoroutineScope
@@ -296,7 +297,7 @@ class MainActivity : ComponentActivity() {
 
             // Append custom user agent
             val defaultUa = userAgentString
-            userAgentString = "$defaultUa PumperlyAndroid/$APP_VERSION"
+            userAgentString = "$defaultUa ${UserAgent.webViewSuffix(APP_VERSION)}"
         }
 
         // No algorithmic darkening: pumperly.com has its own dark theme and follows
@@ -530,6 +531,9 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onPause() {
+        // A fix still being searched for is not wanted once the app is off screen; the next
+        // onResume starts a new one. Cancelling the job also stops the platform request.
+        locationJob?.cancel()
         webView.onPause()
         super.onPause()
     }

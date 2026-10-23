@@ -15,6 +15,10 @@ class NavigationPolicyTest {
         assertEquals(Decision.LOAD_IN_APP, decide("https://pumperly.com/es?station=ES:4508"))
         assertEquals(Decision.LOAD_IN_APP, decide("https://www.pumperly.com/"))
         assertEquals(Decision.LOAD_IN_APP, decide("https://PUMPERLY.com/en"))
+        // Characters Chromium leaves raw in a query or fragment but java.net.URI rejects.
+        assertEquals(Decision.LOAD_IN_APP, decide("https://pumperly.com/en?q=a|b"))
+        assertEquals(Decision.LOAD_IN_APP, decide("https://pumperly.com/en?x={a}#f^[]"))
+        assertTrue(NavigationPolicy.isAllowed("https://www.pumperly.com/en?q=a|b"))
     }
 
     @Test
@@ -30,6 +34,10 @@ class NavigationPolicyTest {
         assertEquals(Decision.OPEN_EXTERNALLY, decide("https://api.pumperly.com/"))
         assertEquals(Decision.OPEN_EXTERNALLY, decide("https://pumperly.com@evil.example/"))
         assertFalse(NavigationPolicy.isAllowed("https://pumperly.com@evil.example/"))
+        // Same tricks on URLs that only the lenient fallback parses.
+        assertEquals(Decision.OPEN_EXTERNALLY, decide("https://pumperly.com@evil.example/?q=a|b"))
+        assertEquals(Decision.OPEN_EXTERNALLY, decide("https://evil.example\\@pumperly.com/?q=a|b"))
+        assertEquals(Decision.OPEN_EXTERNALLY, decide("https://pumperly.com.evil.example/?q=a|b"))
     }
 
     @Test

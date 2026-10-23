@@ -7,8 +7,10 @@ import java.net.URI
  * Where a navigation may go. Ported from the iOS `NavigationPolicy`: only https pumperly.com
  * loads in the app, a few schemes are never followed at all, and everything else leaves the app.
  *
- * URLs are parsed with [java.net.URI], here and in the WebView client alike, so the parser the
- * tests exercise is the one that decides in the app. A URL it cannot parse is never trusted.
+ * Hosts come from [java.net.URI]. Chromium hands over URLs that URI rejects (a raw `|` or `{` in
+ * a query is legal for the WebView), so when URI throws the host is read from the authority by
+ * [authorityHost] instead. That fallback treats `\` as a delimiter, as Chromium does, so it never
+ * reports pumperly.com for a URL the WebView would load from another host.
  */
 object NavigationPolicy {
     enum class Decision { LOAD_IN_APP, OPEN_EXTERNALLY, CANCEL }
@@ -20,10 +22,13 @@ object NavigationPolicy {
 
     fun scheme(url: String?): String? = url?.let { schemePattern.find(it.trim())?.groupValues?.get(1)?.lowercase() }
 
+    // scheme://[userinfo@]host — userinfo and host stop at `/`, `\`, `?`, `#` (and host at `:`, `@`).
+    private val authorityHost = Regex("""^[A-Za-z][A-Za-z0-9+.-]*://(?:[^/\\?#@]*@)?([^/\\?#:@]+)""")
+
     private fun host(url: String): String? = try {
         URI(url.trim()).host?.lowercase()
     } catch (_: Exception) {
-        null
+        authorityHost.find(url.trim())?.groupValues?.get(1)?.lowercase()
     }
 
     /** True only for https on pumperly.com or www.pumperly.com. */
