@@ -1,0 +1,74 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -3.7032306,
+          40.4188032
+        ]
+      },
+      "properties": {
+        "id": "9367f334-09de-4336-9135-0e6ee683aa19",
+        "externalId": "reve-b58ec81b-ef46-4ea4-9098-5dcd4f3f27dc",
+        "country": "ES",
+        "name": "Telpark - Plaza del Carmen",
+        "brand": "Telpark",
+        "address": "Plaza del Carmen, C. de la Salud, 2,, 28013",
+        "city": "Madrid",
+        "fuelType": "EV",
+        "currency": "EUR",
+        "powerKw": 360,
+        "distanceKm": 0.218
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -3.703335,
+          40.414424
+        ]
+      },
+      "properties": {
+        "id": "1f6a3947-9aae-4722-9718-661b98c82ac1",
+        "externalId": "reve-bea61682-336d-48aa-b085-e542b6777ce3",
+        "country": "ES",
+        "name": "Plaza de Jacinto Benavente, s/n 28012 MADRID ESP",
+        "brand": "EMPRESA MUNICIPAL DE TRANSPORTES DE MADRID, S.A.",
+        "address": "Plaza de Jacinto Benavente, s/n, 28012",
+        "city": "MADRID",
+        "fuelType": "EV",
+        "currency": "EUR",
+        "powerKw": 50,
+        "distanceKm": 0.296
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -3.706886,
+          40.415787
+        ]
+      },
+      "properties": {
+        "id": "dde73a58-f124-461d-9432-c111e471169c",
+        "externalId": "reve-ab65952b-6a5e-4e34-b5f9-debf387e04a8",
+        "country": "ES",
+        "name": "Plaza Mayor, s/n 28013 Madrid ESP",
+        "brand": "EMPRESA MUNICIPAL DE TRANSPORTES DE MADRID, S.A.",
+        "address": "Plaza Mayor, s/n, 28013",
+        "city": "Madrid",
+        "fuelType": "EV",
+        "currency": "EUR",
+        "powerKw": 7,
+        "distanceKm": 0.348
+      }
+    }
+  ]
+}

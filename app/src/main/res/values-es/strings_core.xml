@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Nombres de combustible, como los usan la app de iOS y la web. -->
+    <string name="fuel_B7">Diésel A</string>
+    <string name="fuel_B7_PREMIUM">Diésel Premium</string>
+    <string name="fuel_B10">Diésel B10</string>
+    <string name="fuel_B_AGRICULTURAL">Diésel B (agrícola)</string>
+    <string name="fuel_HVO">Diésel renovable (HVO)</string>
+    <string name="fuel_E5">Gasolina 95</string>
+    <string name="fuel_E5_PREMIUM">Gasolina 95 Premium</string>
+    <string name="fuel_E10">Gasolina 95 E10</string>
+    <string name="fuel_E5_98">Gasolina 98</string>
+    <string name="fuel_E98_E10">Gasolina 98 E10</string>
+    <string name="fuel_LPG">GLP / Autogás</string>
+    <string name="fuel_CNG">GNC</string>
+    <string name="fuel_LNG">GNL</string>
+    <string name="fuel_H2">Hidrógeno</string>
+    <string name="fuel_EV">Carga eléctrica</string>
+    <string name="fuel_ADBLUE">AdBlue</string>
+
+    <!-- Secciones del selector de combustible. -->
+    <string name="fuel_category_diesel">Diésel</string>
+    <string name="fuel_category_gasoline">Gasolina</string>
+    <string name="fuel_category_gas">Gas</string>
+    <string name="fuel_category_hydrogen">Hidrógeno</string>
+    <string name="fuel_category_electric">Eléctrico</string>
+    <string name="fuel_category_other">Otros</string>
+</resources>
