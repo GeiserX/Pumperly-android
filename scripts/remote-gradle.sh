@@ -3,7 +3,7 @@
 #
 # There is no usable JVM on the Macs this repo is developed on, so this script
 # rsyncs the tree to a host with Docker and runs Gradle inside
-# eclipse-temurin:17-jdk, the same JDK major version CI uses. The Android SDK
+# eclipse-temurin:17.0.19_10-jdk (pinned, bump it on purpose), the same JDK major version CI uses. The Android SDK
 # and the Gradle cache live in persistent directories on the host, so only the
 # first run pays the downloads.
 #
@@ -66,7 +66,7 @@ ssh "$HOST" "docker run --rm \
   -v $ROOT/src:/src \
   -v $ROOT/gradle:/root/.gradle \
   -w /src -e ANDROID_HOME=/sdk -e ANDROID_SDK_ROOT=/sdk \
-  eclipse-temurin:17-jdk bash -lc './gradlew --no-daemon --max-workers=$WORKERS $TASKS'" || status=$?
+  eclipse-temurin:17.0.19_10-jdk bash -lc './gradlew --no-daemon --max-workers=$WORKERS $TASKS'" || status=$?
 
 # Bring back the test and lint reports, pass or fail, so the JUnit XML can be
 # read here. A BUILD SUCCESSFUL line alone does not say how many tests ran.
