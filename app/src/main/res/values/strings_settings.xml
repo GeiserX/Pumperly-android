@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Widget fuel screen and its launcher shortcut. Same texts as the iOS Localizable.strings. -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_intro">Pumperly adds a Cheapest nearby widget to your home screen. Choose the fuel it shows; you can change it later from the widget or by touching and holding the app icon.</string>
+    <string name="settings_fuel_footer">The Cheapest nearby widget shows the stations near you with the price of this fuel.</string>
+    <string name="settings_done">Done</string>
+    <string name="settings_shortcut_short">Widget fuel</string>
+    <string name="settings_shortcut_long">Change the widget fuel</string>
+</resources>
