@@ -10,4 +10,13 @@
     <string name="page_error_title">Page Not Available</string>
     <string name="page_error_message">The requested page could not be loaded.</string>
     <string name="page_error_retry">Retry</string>
+
+    <!-- Launcher shortcut "Cheapest nearby" and the names the assistant matches it by. -->
+    <string name="shortcut_cheapest_short">Cheapest nearby</string>
+    <string name="shortcut_cheapest_long">Cheapest stations nearby</string>
+    <string-array name="shortcut_cheapest_feature">
+        <item>cheapest nearby</item>
+        <item>cheapest station</item>
+        <item>cheapest fuel nearby</item>
+    </string-array>
 </resources>
