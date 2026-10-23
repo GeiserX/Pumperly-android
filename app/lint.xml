@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<lint>
+    <!-- A WebView whose renderer dies or is killed for memory takes the whole
+         app down unless WebViewClient handles onRenderProcessGone. Treat a
+         missing handler as a build failure, not a warning. -->
+    <issue id="MissingOnRenderProcessGone" severity="error" />
+</lint>
