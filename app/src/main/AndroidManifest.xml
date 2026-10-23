@@ -18,7 +18,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Pumperly.Splash"
         android:usesCleartextTraffic="false"
-        tools:targetApi="33">
+        tools:ignore="UnusedAttribute">
+        <!-- UnusedAttribute is ignored only for android:localeConfig (API 33, minSdk 26: older
+             releases skip it). Kept narrow so NewApi still checks this element and its children. -->
 
         <activity
             android:name=".MainActivity"

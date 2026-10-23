@@ -50,8 +50,15 @@ Read test counts from `app/build/test-results/testDebugUnitTest/*.xml` (the scri
 
 ```
 com.pumperly.app/
-  MainActivity.kt      # Single activity: WebView setup, permissions, error handling, state restore
-  PumperlyWebView.kt   # WebViewClient + WebChromeClient (navigation, errors, geolocation, file upload)
+  MainActivity.kt          # Web shell: WebView setup, permissions, error handling, state restore
+  PumperlyWebView.kt       # WebViewClient + WebChromeClient (navigation, errors, geolocation, file upload)
+  PumperlyApplication.kt   # Redraws the widget when the fuel changes
+  core/                    # Settings, fuel types, location, nearest-stations API, station cache, prefetcher
+  shell/                   # Navigation policy and ShellError
+  ui/settings/             # Fuel picker (SettingsActivity)
+  ui/error/                # Error screen with the cached stations
+  ui/cheapest/             # Cheapest nearby screen (CheapestNearbyActivity)
+  widget/                  # Glance home-screen widget, its state, refresh worker and tap intents
 ```
 
 ### Key Components
@@ -73,8 +80,7 @@ com.pumperly.app/
 
 ### Dark Mode
 
-- Uses `isAlgorithmicDarkeningAllowed` on Android 13+ (Tiramisu)
-- Falls back to deprecated `forceDark` on Android 10-12 (Q to S)
+- No WebView darkening: pumperly.com follows `prefers-color-scheme` from the app's DayNight theme; a light/dark switch reloads the page.
 - The Compose screens pick their light or dark colours from the system theme
 
 ### Geolocation
