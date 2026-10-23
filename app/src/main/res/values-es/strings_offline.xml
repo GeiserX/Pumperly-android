@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Pantalla sin conexión: las últimas gasolineras obtenidas cerca. %1$s es una hora, o un día y una hora. -->
+    <string name="offline_header">Lo más barato cerca, último dato: %1$s</string>
+    <string name="offline_header_ev">Puntos de carga cercanos, último dato: %1$s</string>
+    <!-- Botón de cada gasolinera guardada: la abre en una app de mapas. -->
+    <string name="offline_open_map">Mapa</string>
+    <!-- Texto hablado de ese botón. %1$s es el nombre de la gasolinera. -->
+    <string name="offline_open_map_description">Abrir %1$s en una app de mapas</string>
+</resources>
