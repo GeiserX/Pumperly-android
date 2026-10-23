@@ -1,14 +1,16 @@
 # CLAUDE.md — Pumperly Android
 
 ## Overview
-Official Android app for Pumperly, the open-source fuel and EV route planner. A lightweight WebView shell wrapping pumperly.com with native geolocation, deep links, offline fallback, dark mode support, and strict security model. No Compose, no heavy dependencies — minimal APK size.
+Official Android app for Pumperly, the open-source fuel and EV route planner. A WebView shell wrapping pumperly.com with native geolocation, deep links, offline fallback, dark mode support, and strict security model. Native screens (settings, offline, cheapest nearby) are Compose and the home-screen widget is Glance; no Google Play services, so an F-Droid build stays possible.
 
 ## Tech Stack
-- Kotlin 2.1+
-- Android Views (NOT Compose — WebView app with programmatic layout)
+- Kotlin 2.4.0, compiled by AGP 9's built-in Kotlin. The `kotlin-android` plugin is declared at the root with `apply false` only to pin the compiler version; `:app` applies the Compose and serialization compiler plugins, which must match it.
+- The WebView shell is Android Views with a programmatic layout; new native screens use Jetpack Compose (Material 3), the widget uses Glance, background refresh uses WorkManager, settings use DataStore Preferences, JSON uses kotlinx.serialization
 - AndroidX WebKit, SwipeRefreshLayout, SplashScreen
-- Android SDK 26+ (minSdk), compileSdk 36, targetSdk 36
-- Gradle with version catalogs (`libs.versions.toml`)
+- Android SDK 26+ (minSdk), compileSdk 37, targetSdk 36
+- JDK 17 (CI and the Docker build agree)
+- Gradle with version catalogs (`gradle/libs.versions.toml`)
+- Unit tests: JUnit 4 + Robolectric under `app/src/test`. Robolectric runs the API 35 sandbox (`app/src/test/resources/robolectric.properties`) because its API 36 sandbox needs Java 21
 
 ## Development
 
@@ -24,15 +26,23 @@ Official Android app for Pumperly, the open-source fuel and EV route planner. A 
   -PPUMPERLY_KEY_PASSWORD=changeme
 ```
 
-**No local Java on macOS dev machine** — all compilation is via GitHub Actions CI. Lint baseline at `app/lint-baseline.xml` — new lint errors are fatal.
+**No local Java on the macOS dev machines.** Build and test on a Linux host with Docker through `scripts/remote-gradle.sh` (it reads the host and a per-checkout build root from `scripts/remote-gradle.env`, which is git-ignored), or let CI do it. A green remote run is a pre-check, not CI.
+
+```bash
+scripts/remote-gradle.sh 'assembleDebug lintDebug testDebugUnitTest'
+```
+
+Read test counts from `app/build/test-results/testDebugUnitTest/*.xml` (the script fetches them back); `BUILD SUCCESSFUL` alone does not say how many tests ran.
+
+**Lint:** `app/lint.xml` raises `MissingOnRenderProcessGone` to an error; every other issue stays a warning (`warningsAsErrors = false`). `app/lint-baseline.xml` holds only the two existing `MissingOnRenderProcessGone` occurrences in `PumperlyWebView.kt`. The change that adds `onRenderProcessGone` must empty that file (keep the `<issues>` element), or a later regression would be hidden by the baseline.
 
 ### Repository & Infrastructure
 
 - **Package:** `com.pumperly.app`
 - **Version source of truth:** `gradle.properties` (`VERSION_NAME`, `VERSION_CODE`). CI overrides via `-P` flags.
 - **Release workflow:** Push a `v*` tag -> GitHub Actions builds signed APK+AAB, creates GitHub Release
-- **CI workflow:** On push to main -> debug APK + lint + signed release APK. On PR -> debug + lint only.
-- **Signing keystore:** JKS at `~/repos/personal/keystores/pumperly-release.jks` (alias: `pumperly`, password: `pumperly-release-2026`). Base64 in GitHub secret `KEYSTORE_BASE64`.
+- **CI workflow:** On PR -> debug APK + lint + unit tests. On push to main -> the same plus a signed release APK.
+- **Signing keystore:** kept outside the repo, never committed. Base64 in GitHub secret `KEYSTORE_BASE64`; its passwords and alias are in secrets `KEYSTORE_PASSWORD`, `KEY_PASSWORD` and `KEY_ALIAS`, and nowhere in this repo.
 - **F-Droid:** MR !35851 at gitlab.com/fdroid/fdroiddata. Metadata at `metadata/com.pumperly.app.yml`.
 - **Web app:** pumperly.com (Next.js, source of truth for all features)
 

@@ -30,6 +30,9 @@ jobs:
       - name: Run lint
         run: ./gradlew lintDebug
 
+      - name: Run unit tests
+        run: ./gradlew testDebugUnitTest
+
       - name: Decode keystore
         if: github.event_name == 'push'
         run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > app/release.keystore
