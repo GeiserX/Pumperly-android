@@ -1,5 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -37,6 +39,23 @@ android {
 
     buildFeatures {
         buildConfig = true
+        compose = true
+    }
+
+    lint {
+        // lint.xml raises MissingOnRenderProcessGone to an error. The baseline
+        // holds only its two existing occurrences in PumperlyWebView.kt; the
+        // shell fix empties it, and any new occurrence fails the build.
+        lintConfig = file("lint.xml")
+        baseline = file("lint-baseline.xml")
+        warningsAsErrors = false
+    }
+
+    testOptions {
+        unitTests {
+            // Robolectric needs the merged resources and manifest.
+            isIncludeAndroidResources = true
+        }
     }
 
     buildTypes {
@@ -72,4 +91,28 @@ dependencies {
     implementation(libs.androidx.activity.ktx)
     implementation(libs.androidx.webkit)
     implementation(libs.androidx.swiperefreshlayout)
+
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.compose.ui)
+    implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.compose.ui.tooling.preview)
+    debugImplementation(libs.androidx.compose.ui.tooling)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
+
+    implementation(libs.androidx.glance.appwidget)
+    implementation(libs.androidx.glance.material3)
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.datastore.preferences)
+    implementation(libs.kotlinx.serialization.json)
+
+    testImplementation(platform(libs.androidx.compose.bom))
+    testImplementation(libs.junit)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.androidx.arch.core.testing)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.androidx.work.testing)
+    testImplementation(libs.androidx.glance.appwidget.testing)
+    testImplementation(libs.androidx.compose.ui.test.junit4)
 }

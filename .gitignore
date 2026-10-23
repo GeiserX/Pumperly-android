@@ -25,3 +25,6 @@ signing.properties
 .beads/issues.jsonl
 .beads/interactions.jsonl
 .beads/events.jsonl
+
+# Local build-host settings for scripts/remote-gradle.sh
+scripts/remote-gradle.env
