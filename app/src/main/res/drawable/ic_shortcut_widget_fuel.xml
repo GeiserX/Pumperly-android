@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Fuel pump on the brand green, for the "Widget fuel" launcher shortcut. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <path
+        android:fillColor="@color/pumperly_green"
+        android:pathData="M24,0a24,24 0,1 1,0 48a24,24 0,1 1,0 -48z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M17,13h10a2,2 0,0 1,2 2v8h1a3,3 0,0 1,3 3v5a1,1 0,0 0,2 0v-9l-3,-3l1.4,-1.4l3.6,3.6v9.8a3,3 0,0 1,-6 0v-5a1,1 0,0 0,-1 -1h-1v9h1v2h-16v-2h1v-19a2,2 0,0 1,2 -2zM16,16v6h10v-6z" />
+</vector>

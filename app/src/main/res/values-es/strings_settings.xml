@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_title">Ajustes</string>
+    <string name="settings_intro">Pumperly añade a tu pantalla de inicio el widget «Lo más barato cerca». Elige el combustible que muestra; puedes cambiarlo después desde el widget o manteniendo pulsado el icono de la app.</string>
+    <string name="settings_fuel_footer">El widget «Lo más barato cerca» muestra las gasolineras cercanas con el precio de este combustible.</string>
+    <string name="settings_done">Hecho</string>
+    <string name="settings_shortcut_short">Combustible</string>
+    <string name="settings_shortcut_long">Combustible del widget</string>
+</resources>
