@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Pumperly</string>
+    <string name="offline_title">Sin conexión</string>
+    <string name="offline_message">Comprueba tu conexión a internet y vuelve a intentarlo.</string>
+    <string name="offline_retry">Reintentar</string>
+    <string name="ssl_error_title">Conexión no segura</string>
+    <string name="ssl_error_message">No se ha podido establecer una conexión segura. Inténtalo de nuevo más tarde.</string>
+    <string name="ssl_error_back">Volver</string>
+    <string name="page_error_title">Página no disponible</string>
+    <string name="page_error_message">No se ha podido cargar la página.</string>
+    <string name="page_error_retry">Reintentar</string>
+</resources>
