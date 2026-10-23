@@ -1,10 +1,12 @@
 package com.pumperly.app
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
 import android.net.http.SslError
 import android.webkit.GeolocationPermissions
+import android.webkit.RenderProcessGoneDetail
 import android.webkit.SslErrorHandler
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
@@ -14,46 +16,43 @@ import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.ProgressBar
+import com.pumperly.app.shell.NavigationPolicy
+import com.pumperly.app.shell.ShellError
 
 /**
- * Custom WebViewClient that keeps pumperly.com navigation in-app
- * and opens external links in the system browser.
+ * Keeps pumperly.com navigation in the app, hands other links to the system, and never follows
+ * the schemes [NavigationPolicy] blocks. The decisions live in [NavigationPolicy] and
+ * [ShellError] so they can be tested without a WebView.
+ *
+ * The suppression on the constructor is for the lint check's constructor rule, which is meant
+ * for a bare `WebViewClient()` and also fires on Kotlin's `: WebViewClient()` supertype call.
+ * The class rule still checks that this class overrides [onRenderProcessGone].
  */
-enum class WebViewError { OFFLINE, SSL, PAGE }
-
-class PumperlyWebViewClient(
+class PumperlyWebViewClient @SuppressLint("MissingOnRenderProcessGone") constructor(
     private val progressBar: ProgressBar,
-    private val onError: (type: WebViewError, failingUrl: String?) -> Unit,
-    private val onPageStarted: () -> Unit
+    private val onError: (type: ShellError, failingUrl: String?) -> Unit,
+    private val onPageStarted: () -> Unit,
+    private val onRendererGone: (view: WebView) -> Unit,
 ) : WebViewClient() {
-
-    companion object {
-        private val PUMPERLY_HOSTS = setOf(
-            "pumperly.com",
-            "www.pumperly.com"
-        )
-    }
 
     override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
         val url = request.url
-        val scheme = url.scheme?.lowercase()
-        val host = url.host?.lowercase()
-
-        // Allow pumperly.com HTTPS navigation in-app
-        if (scheme == "https" && host in PUMPERLY_HOSTS) {
-            return false
-        }
-
-        // Everything else (external HTTPS, mailto:, tel:, geo:, etc.) → system handler
-        try {
-            val intent = Intent(Intent.ACTION_VIEW, url).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        return when (NavigationPolicy.decide(url.toString(), request.isForMainFrame)) {
+            NavigationPolicy.Decision.LOAD_IN_APP -> false
+            NavigationPolicy.Decision.CANCEL -> true
+            NavigationPolicy.Decision.OPEN_EXTERNALLY -> {
+                // External https, mailto:, tel:, geo: and the like go to the app that owns them.
+                try {
+                    val intent = Intent(Intent.ACTION_VIEW, url).apply {
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                    view.context.startActivity(intent)
+                } catch (_: android.content.ActivityNotFoundException) {
+                    // No handler for this scheme: ignore silently
+                }
+                true
             }
-            view.context.startActivity(intent)
-        } catch (_: android.content.ActivityNotFoundException) {
-            // No handler for this scheme — ignore silently
         }
-        return true
     }
 
     override fun onPageStarted(view: WebView, url: String?, favicon: Bitmap?) {
@@ -74,10 +73,7 @@ class PumperlyWebViewClient(
     ) {
         super.onReceivedError(view, request, error)
         if (request.isForMainFrame) {
-            val type = if (error.errorCode == ERROR_HOST_LOOKUP || error.errorCode == ERROR_CONNECT ||
-                error.errorCode == ERROR_TIMEOUT || error.errorCode == ERROR_IO
-            ) WebViewError.OFFLINE else WebViewError.PAGE
-            onError(type, request.url?.toString())
+            ShellError.classify(error.errorCode)?.let { onError(it, request.url?.toString()) }
         }
     }
 
@@ -87,15 +83,25 @@ class PumperlyWebViewClient(
         errorResponse: WebResourceResponse
     ) {
         super.onReceivedHttpError(view, request, errorResponse)
-        if (request.isForMainFrame && errorResponse.statusCode >= 400) {
-            onError(WebViewError.PAGE, request.url?.toString())
+        if (request.isForMainFrame) {
+            ShellError.classifyHttpStatus(errorResponse.statusCode)?.let { onError(it, request.url?.toString()) }
         }
     }
 
     @Suppress("deprecation")
     override fun onReceivedSslError(view: WebView, handler: SslErrorHandler, error: SslError) {
         handler.cancel()
-        onError(WebViewError.SSL, error.url)
+        onError(ShellError.SSL, error.url)
+    }
+
+    /**
+     * The renderer crashed or was killed to free memory. Without this override the whole app
+     * dies with it. The dead WebView can never be used again, so the Activity replaces it and
+     * reloads the page (the iOS app reloads on `webViewWebContentProcessDidTerminate`).
+     */
+    override fun onRenderProcessGone(view: WebView, detail: RenderProcessGoneDetail): Boolean {
+        onRendererGone(view)
+        return true
     }
 }
 
