@@ -14,4 +14,5 @@
     <string name="cheapest_change_fuel">Cambiar combustible</string>
     <string name="cheapest_retry">Reintentar</string>
     <string name="cheapest_open_app">Abrir Pumperly</string>
+    <string name="cheapest_location_unavailable">No se ha podido obtener tu ubicación ahora. Comprueba que la ubicación está activada y vuelve a intentarlo.</string>
 </resources>

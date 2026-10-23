@@ -118,27 +118,36 @@ private fun messageText(context: Context, content: CheapestNearbyEntry.Content?)
     },
 )
 
-/** Fuel name and, for cached rows, the time they were fetched. */
+/**
+ * Fuel name and, for cached rows, the time they were fetched. The time is its own Text so a long
+ * fuel name is what gets cut, never the time (as on iOS).
+ */
 @Composable
 private fun Header(entry: CheapestNearbyEntry?, fuel: FuelType, modifier: GlanceModifier = GlanceModifier) {
     val context = LocalContext.current
     val asOf = entry?.asOf?.let { TimelineMapping.asOfText(it, now = entry.date, locale = context.locale()) }
     val label = context.getString(fuel.labelRes)
-    val text = if (asOf != null) "$label · $CLOCK $asOf" else label
-    Text(
-        text = text,
-        maxLines = 1,
-        style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 12.sp, fontWeight = FontWeight.Medium),
+    val style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
         modifier = modifier.semantics {
             contentDescription = if (asOf != null) "$label, ${context.getString(R.string.widget_as_of, asOf)}" else label
         },
-    )
+    ) {
+        Text(
+            text = label,
+            maxLines = 1,
+            style = style,
+            modifier = if (asOf != null) GlanceModifier.defaultWeight() else GlanceModifier,
+        )
+        if (asOf != null) Text(text = " · $CLOCK $asOf", maxLines = 1, style = style)
+    }
 }
 
 @Composable
 private fun SmallStation(entry: CheapestNearbyEntry, row: StationRow) {
     Column(modifier = GlanceModifier.fillMaxSize()) {
-        Header(entry, entry.fuel)
+        Header(entry, entry.fuel, GlanceModifier.fillMaxWidth())
         Spacer(GlanceModifier.defaultWeight())
         Text(
             text = row.valueText ?: "—",
@@ -221,7 +230,7 @@ private fun Message(entry: CheapestNearbyEntry?, fuel: FuelType, medium: Boolean
                 Header(entry, fuel, GlanceModifier.clickable(actionStartActivity(WidgetIntents.settings(context))))
             }
         } else {
-            Header(entry, fuel)
+            Header(entry, fuel, GlanceModifier.fillMaxWidth())
         }
         Spacer(GlanceModifier.defaultWeight())
         Text(

@@ -77,6 +77,15 @@ class CheapestNearbyScreenTest {
     }
 
     @Test
+    fun noFixWithLocationAllowedOffersARetryNotTheApp() {
+        show(CheapestNearbyUiState.LocationUnavailable(FuelType.B7))
+        compose.onNodeWithText(context.getString(R.string.cheapest_location_unavailable)).assertExists()
+        compose.onNodeWithText(context.getString(R.string.widget_needs_location)).assertDoesNotExist()
+        compose.onNodeWithText(context.getString(R.string.cheapest_retry)).performClick()
+        assertEquals(listOf("retry"), actions)
+    }
+
+    @Test
     fun emptyOffersAnotherFuel() {
         show(CheapestNearbyUiState.Ready(entry(Result.success(emptyList()))))
         compose.onNodeWithText(context.getString(R.string.widget_empty)).assertExists()

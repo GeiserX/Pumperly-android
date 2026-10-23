@@ -4,6 +4,7 @@
   updatePeriodMillis is 0 because WidgetRefreshWorker schedules the refresh with WorkManager.
 -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:description="@string/widget_description"
     android:initialLayout="@layout/glance_default_loading_layout"
     android:minWidth="110dp"
@@ -17,4 +18,5 @@
     android:previewImage="@drawable/widget_preview"
     android:resizeMode="horizontal|vertical"
     android:updatePeriodMillis="0"
-    android:widgetCategory="home_screen" />
+    android:widgetCategory="home_screen"
+    tools:targetApi="31" />

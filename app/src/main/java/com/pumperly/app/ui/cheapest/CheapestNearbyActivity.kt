@@ -59,13 +59,26 @@ class CheapestNearbyActivity : ComponentActivity() {
         load()
     }
 
+    /** A lookup never outlives the screen: no fix request or fetch keeps running in the background. */
+    override fun onStop() {
+        lookup?.cancel()
+        super.onStop()
+    }
+
     private fun load() {
         lookup?.cancel()
         lookup = lifecycleScope.launch {
             val settings = SharedSettings.forContext(this@CheapestNearbyActivity)
             val fuel = settings.fuel()
             state = CheapestNearbyUiState.Loading(fuel)
-            val position = position(this@CheapestNearbyActivity, settings)
+            val position = when (val found = position(this@CheapestNearbyActivity, settings)) {
+                Position.Unavailable -> {
+                    state = CheapestNearbyUiState.LocationUnavailable(fuel)
+                    return@launch
+                }
+                Position.Denied -> null
+                is Position.At -> found.coordinate
+            }
             val result = WidgetState.refresh(
                 Instant.now(), fuel, position, HttpNearestApi(), StationCache.forContext(this@CheapestNearbyActivity),
             )
@@ -81,16 +94,25 @@ class CheapestNearbyActivity : ComponentActivity() {
         }
     }
 
+    /** Where to look from; Denied is answered like the widget (open the app), Unavailable with a retry. */
+    private sealed interface Position {
+        data class At(val coordinate: Coordinate) : Position
+
+        data object Unavailable : Position
+
+        data object Denied : Position
+    }
+
     private companion object {
         /** A live fix first, saved like every fix the app gets; without one, the position saved earlier. */
-        suspend fun position(context: Context, settings: SharedSettings): Coordinate? =
+        suspend fun position(context: Context, settings: SharedSettings): Position =
             when (val outcome = Locator.locate(context)) {
                 is Locator.Outcome.Fix -> {
                     settings.saveLocation(outcome.latitude, outcome.longitude)
-                    Coordinate(outcome.latitude, outcome.longitude)
+                    Position.At(Coordinate(outcome.latitude, outcome.longitude))
                 }
-                Locator.Outcome.Unavailable -> settings.lastLocation()
-                Locator.Outcome.Denied -> null
+                Locator.Outcome.Unavailable -> settings.lastLocation()?.let(Position::At) ?: Position.Unavailable
+                Locator.Outcome.Denied -> Position.Denied
             }
     }
 }

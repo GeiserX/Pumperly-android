@@ -6,12 +6,14 @@ import androidx.glance.appwidget.testing.unit.GlanceAppWidgetUnitTest
 import androidx.glance.appwidget.testing.unit.runGlanceAppWidgetUnitTest
 import androidx.glance.appwidget.testing.unit.hasStartActivityClickAction
 import androidx.glance.testing.unit.hasText
+import androidx.glance.testing.unit.hasTextEqualTo
 import androidx.test.core.app.ApplicationProvider
 import com.pumperly.app.core.CheapestNearbyEntry
 import com.pumperly.app.core.Coordinate
 import com.pumperly.app.core.Fixture
 import com.pumperly.app.core.FuelType
 import com.pumperly.app.core.StationCache
+import com.pumperly.app.core.TimelineMapping
 import java.nio.file.Files
 import java.time.Duration
 import java.time.Instant
@@ -126,9 +128,11 @@ class CheapestNearbyWidgetTest {
     @Test
     fun cachedShowsTheStationsWithTheTimeTheyWereFetched() {
         val entry = state(api = FakeNearestApi(fail = true), cachedAt = now.minus(Duration.ofMinutes(30)))
+        val asOf = TimelineMapping.asOfText(now.minus(Duration.ofMinutes(30)), now = entry.date, locale = english)
         for (size in sizes) render(entry, size) {
             onNode(hasText("€1.949")).assertExists()
-            onNode(hasText("🕒")).assertExists()
+            // The time is its own text, so a long fuel name is cut before it is.
+            onNode(hasTextEqualTo(" · 🕒 $asOf")).assertExists()
             onNode(hasText(string(com.pumperly.app.R.string.widget_unavailable))).assertDoesNotExist()
         }
     }

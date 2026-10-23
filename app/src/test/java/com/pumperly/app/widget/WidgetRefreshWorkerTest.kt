@@ -3,8 +3,10 @@ package com.pumperly.app.widget
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.work.Configuration
+import androidx.work.ExistingWorkPolicy
 import androidx.work.ListenableWorker
 import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.WorkerFactory
@@ -20,6 +22,7 @@ import java.io.File
 import java.nio.file.Files
 import java.time.Duration
 import java.time.Instant
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -107,6 +110,7 @@ class WidgetRefreshWorkerTest {
         val retry = pending(WidgetRefreshWorker.RETRY).single()
         assertEquals(WorkInfo.State.ENQUEUED, retry.state)
         assertEquals(Duration.ofMinutes(15).toMillis(), retry.initialDelayMillis)
+        assertEquals(NetworkType.CONNECTED, retry.constraints.requiredNetworkType)
     }
 
     @Test
@@ -164,8 +168,24 @@ class WidgetRefreshWorkerTest {
     fun theRetryRunChainsTheNextRetryInsteadOfCancellingItself() = runTest {
         settings.saveLocation(40.417, -3.704, now)
         api.fail = true
+        // The retry that is running now: REPLACE would cancel it, APPEND keeps it and queues one after it.
+        WorkManager.getInstance(context).enqueueUniqueWork(
+            WidgetRefreshWorker.RETRY,
+            ExistingWorkPolicy.REPLACE,
+            OneTimeWorkRequestBuilder<WidgetRefreshWorker>()
+                .setInitialDelay(15, TimeUnit.MINUTES)
+                .addTag(WidgetRefreshWorker.RETRY)
+                .build(),
+        ).result.get()
+        val running = pending(WidgetRefreshWorker.RETRY).single().id
         run(tags = listOf(WidgetRefreshWorker.RETRY))
-        assertRetryIn15Minutes()
+        val retries = pending(WidgetRefreshWorker.RETRY)
+        assertEquals(2, retries.size)
+        assertTrue(retries.any { it.id == running })
+        val next = retries.single { it.id != running }
+        assertEquals(WorkInfo.State.BLOCKED, next.state)
+        assertEquals(Duration.ofMinutes(15).toMillis(), next.initialDelayMillis)
+        assertEquals(NetworkType.CONNECTED, next.constraints.requiredNetworkType)
     }
 
     @Test

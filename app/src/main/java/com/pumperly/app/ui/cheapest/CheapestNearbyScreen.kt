@@ -36,9 +36,12 @@ import com.pumperly.app.core.FuelType
 import com.pumperly.app.core.StationRow
 import com.pumperly.app.core.TimelineMapping
 
-/** What the "Cheapest nearby" screen shows: a lookup in progress, or its answer. */
+/** What the "Cheapest nearby" screen shows: a lookup in progress, no position to look from, or its answer. */
 sealed interface CheapestNearbyUiState {
     data class Loading(val fuel: FuelType) : CheapestNearbyUiState
+
+    /** Location is allowed, but no fix came in time and none was saved earlier. */
+    data class LocationUnavailable(val fuel: FuelType) : CheapestNearbyUiState
 
     data class Ready(val entry: CheapestNearbyEntry) : CheapestNearbyUiState
 }
@@ -63,6 +66,7 @@ fun CheapestNearbyScreen(
         ) {
             val fuel = when (state) {
                 is CheapestNearbyUiState.Loading -> state.fuel
+                is CheapestNearbyUiState.LocationUnavailable -> state.fuel
                 is CheapestNearbyUiState.Ready -> state.entry.fuel
             }
             FuelHeader(fuel, (state as? CheapestNearbyUiState.Ready)?.entry, onChangeFuel)
@@ -72,6 +76,8 @@ fun CheapestNearbyScreen(
                     Spacer(Modifier.width(12.dp))
                     Text(stringResource(R.string.cheapest_loading))
                 }
+                is CheapestNearbyUiState.LocationUnavailable ->
+                    Message(R.string.cheapest_location_unavailable, R.string.cheapest_retry, onRetry)
                 is CheapestNearbyUiState.Ready -> Answer(state.entry, onOpenStation, onRetry, onChangeFuel, onOpenApp)
             }
         }

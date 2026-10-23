@@ -123,6 +123,8 @@ class WidgetRefreshWorker internal constructor(
             if (state.wantsRetry) {
                 val retry = OneTimeWorkRequestBuilder<WidgetRefreshWorker>()
                     .setInitialDelay(TimelineMapping.retryInterval.toMinutes(), TimeUnit.MINUTES)
+                    // Offline, a retry would fail at once and chain another every 15 minutes.
+                    .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
                     .addTag(RETRY)
                     .build()
                 val policy = if (fromRetry) ExistingWorkPolicy.APPEND_OR_REPLACE else ExistingWorkPolicy.REPLACE
