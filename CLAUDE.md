@@ -40,9 +40,9 @@ Read test counts from `app/build/test-results/testDebugUnitTest/*.xml` (the scri
 
 - **Package:** `com.pumperly.app`
 - **Version source of truth:** `gradle.properties` (`VERSION_NAME`, `VERSION_CODE`). CI overrides via `-P` flags.
-- **Release workflow:** Push a `v*` tag -> GitHub Actions builds signed APK+AAB, creates GitHub Release
+- **Release workflow:** Bump `gradle.properties`, then push a matching `v*` tag -> GitHub Actions builds the APK (app signing key) and the AAB (Play upload key), checks both certificate fingerprints, and creates the GitHub Release
 - **CI workflow:** On PR -> debug APK + lint + unit tests. On push to main -> the same plus a signed release APK.
-- **Signing keystore:** kept outside the repo, never committed. Base64 in GitHub secret `KEYSTORE_BASE64`; its passwords and alias are in secrets `KEYSTORE_PASSWORD`, `KEY_PASSWORD` and `KEY_ALIAS`, and nowhere in this repo.
+- **Signing keystores:** kept outside the repo, never committed. The app signing key (certificate SHA-256 `D6:D2:EF:3D:…:3D:EE`, also in pumperly.com's `assetlinks.json`) is in secrets `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_PASSWORD`, `KEY_ALIAS`; the Play upload key (`6D:E6:6E:31:…:E5:AF`) in `UPLOAD_KEYSTORE_BASE64`, `UPLOAD_KEYSTORE_PASSWORD`, `UPLOAD_KEY_PASSWORD`, `UPLOAD_KEY_ALIAS`. Passwords live nowhere in this repo.
 - **F-Droid:** MR !35851 at gitlab.com/fdroid/fdroiddata. Metadata at `metadata/com.pumperly.app.yml`.
 - **Web app:** pumperly.com (Next.js, source of truth for all features)
 

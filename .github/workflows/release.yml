@@ -5,6 +5,13 @@ on:
     tags:
       - 'v*'
 
+# The APK on GitHub Releases is signed with the app signing key, so it updates
+# over earlier APKs and matches pumperly.com/.well-known/assetlinks.json.
+# The AAB is signed with the Play upload key; Google re-signs it for Play.
+env:
+  APP_CERT_SHA256: D6D2EF3D0B9B25AF9950F568AC2AA70871412A83EE33B1B2C207E5FB619B3DEE
+  UPLOAD_CERT_SHA256: 6DE66E313D83C73479C74658AE3F2FB10E71B98C26EFC599DDE6D6257955E5AF
+
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -22,6 +29,8 @@ jobs:
           # versionCode: major*10000 + minor*100 + patch (e.g. 1.2.3 -> 10203)
           IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
           CODE=$(( ${MAJOR:-0} * 10000 + ${MINOR:-0} * 100 + ${PATCH:-0} ))
+          grep -qx "VERSION_NAME=$VERSION" gradle.properties || { echo "gradle.properties VERSION_NAME does not match $TAG"; exit 1; }
+          grep -qx "VERSION_CODE=$CODE" gradle.properties || { echo "gradle.properties VERSION_CODE does not match $CODE"; exit 1; }
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "name=$VERSION" >> "$GITHUB_OUTPUT"
           echo "code=$CODE" >> "$GITHUB_OUTPUT"
@@ -35,18 +44,23 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
 
-      - name: Decode keystore
-        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > app/release.keystore
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v4
 
-      - name: Build release AAB
+      - name: Decode keystores
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > app/release.keystore
+          echo "${{ secrets.UPLOAD_KEYSTORE_BASE64 }}" | base64 -d > app/upload.keystore
+
+      - name: Build release AAB (upload key)
         run: ./gradlew bundleRelease -PVERSION_NAME=${{ steps.version.outputs.name }} -PVERSION_CODE=${{ steps.version.outputs.code }}
         env:
-          PUMPERLY_KEYSTORE_PATH: release.keystore
-          PUMPERLY_KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          PUMPERLY_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          PUMPERLY_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          PUMPERLY_KEYSTORE_PATH: upload.keystore
+          PUMPERLY_KEYSTORE_PASSWORD: ${{ secrets.UPLOAD_KEYSTORE_PASSWORD }}
+          PUMPERLY_KEY_ALIAS: ${{ secrets.UPLOAD_KEY_ALIAS }}
+          PUMPERLY_KEY_PASSWORD: ${{ secrets.UPLOAD_KEY_PASSWORD }}
 
-      - name: Build release APK
+      - name: Build release APK (app signing key)
         run: ./gradlew assembleRelease -PVERSION_NAME=${{ steps.version.outputs.name }} -PVERSION_CODE=${{ steps.version.outputs.code }}
         env:
           PUMPERLY_KEYSTORE_PATH: release.keystore
@@ -54,8 +68,23 @@ jobs:
           PUMPERLY_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           PUMPERLY_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
 
+      - name: Remove keystores
+        if: always()
+        run: rm -f app/release.keystore app/upload.keystore
+
+      - name: Check signing certificates
+        run: |
+          APKSIGNER=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)
+          APK=app/build/outputs/apk/release/app-release.apk
+          AAB=app/build/outputs/bundle/release/app-release.aab
+          apk_cert=$("$APKSIGNER" verify --print-certs "$APK" | sed -n 's/.*certificate SHA-256 digest: //p' | head -1 | tr 'a-f' 'A-F')
+          aab_cert=$(keytool -printcert -jarfile "$AAB" | sed -n 's/.*SHA256: //p' | head -1 | tr -d ':')
+          echo "APK $apk_cert"; echo "AAB $aab_cert"
+          [ "$apk_cert" = "$APP_CERT_SHA256" ] || { echo "APK is not signed with the app signing key"; exit 1; }
+          [ "$aab_cert" = "$UPLOAD_CERT_SHA256" ] || { echo "AAB is not signed with the upload key"; exit 1; }
+
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.tag }}
           name: ${{ steps.version.outputs.tag }}

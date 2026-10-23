@@ -1,0 +1,6 @@
+- Widget con las gasolineras más baratas cerca de ti (2x2 y 4x2)
+- Pantalla «Lo más barato cerca» desde el icono de la aplicación
+- Sin conexión: las últimas gasolineras conocidas cuando la web no carga
+- Elige el combustible del widget al empezar, desde el widget o desde el icono
+- Español e inglés, según el idioma elegido para la aplicación
+- Enlaces más seguros y recuperación si el WebView se cierra

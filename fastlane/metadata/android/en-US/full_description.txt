@@ -1,13 +1,11 @@
-Pumperly is an open-source fuel and EV route planner with real-time prices across 36 countries. Find the cheapest fuel stations and EV charging points along your route.
+Pumperly is an open-source fuel and EV route planner with live prices from 22 countries. Pick a destination and it draws the route, lists every station along it with its price and the minutes a stop would add, and plans the cheapest places to fill up.
 
-Features:
-- Real-time fuel prices across 36 European countries
-- EV charging station locations via Open Charge Map
-- Route planning with cheapest fuel stops
-- Offline support with cached data
-- Dark mode
-- Deep link support
-- Geolocation for nearby stations
-- Material Design with splash screen
+The app shows pumperly.com and adds parts that work without the site:
+- A home-screen widget with the cheapest stations near you for your fuel, in 2x2 or 4x2. It never asks for background location.
+- A "Cheapest nearby" screen: touch and hold the app icon.
+- When you are offline, the last known stations, each with a button to open it in your map app.
+- A fuel setting, chosen on first launch and changed from the widget or the app icon.
 
-Pumperly uses OpenStreetMap data and can connect to your own self-hosted Pumperly instance or the public pumperly.com service.
+Also: Spanish and English, dark mode, pumperly.com links open in the app, and a release APK of about 2 MB with no Google Play services, no ads and no tracking.
+
+Prices come from official government feeds and community sources. Pumperly is free software under the GPL.

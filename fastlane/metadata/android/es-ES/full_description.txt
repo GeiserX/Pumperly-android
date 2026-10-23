@@ -1,0 +1,11 @@
+Pumperly es un planificador de rutas de código abierto con precios de combustible y de recarga eléctrica en tiempo real de 22 países. Elige un destino y te dibuja la ruta, lista cada gasolinera del camino con su precio y los minutos que añade la parada, y planifica dónde repostar más barato.
+
+La aplicación muestra pumperly.com y añade funciones que no dependen de la web:
+- Un widget para la pantalla de inicio con las gasolineras más baratas cerca de ti para tu combustible, en 2x2 o 4x2. Nunca pide la ubicación en segundo plano.
+- La pantalla «Lo más barato cerca»: mantén pulsado el icono de la aplicación.
+- Sin conexión, las últimas gasolineras conocidas, cada una con un botón para abrirla en tu aplicación de mapas.
+- El combustible del widget, que eliges al abrir la aplicación por primera vez y cambias desde el widget o el icono.
+
+Además: español e inglés, modo oscuro, los enlaces de pumperly.com se abren en la aplicación, y un APK de unos 2 MB sin servicios de Google Play, sin anuncios y sin rastreo.
+
+Los precios vienen de fuentes oficiales de los gobiernos y de fuentes comunitarias. Pumperly es software libre con licencia GPL.
