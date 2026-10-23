@@ -9,6 +9,12 @@
         android:icon="@drawable/ic_shortcut_widget_fuel"
         android:shortcutShortLabel="@string/settings_shortcut_short"
         android:shortcutLongLabel="@string/settings_shortcut_long">
+        <!-- The first intent is the back stack: the picker opens over the app, so Done or back
+             lands in the app, as the iOS quick action does. -->
+        <intent
+            android:action="android.intent.action.MAIN"
+            android:targetPackage="com.pumperly.app"
+            android:targetClass="com.pumperly.app.MainActivity" />
         <intent
             android:action="android.intent.action.VIEW"
             android:targetPackage="com.pumperly.app"

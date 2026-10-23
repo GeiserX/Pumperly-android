@@ -22,9 +22,10 @@ class ShortcutsAndLocalesTest {
     private val context: Context = ApplicationProvider.getApplicationContext()
 
     private class Shortcut(val id: String, val shortLabel: Int, val longLabel: Int, val icon: Int) {
-        var action: String? = null
-        var targetPackage: String? = null
-        var targetClass: String? = null
+        val intents = mutableListOf<Triple<String?, String?, String?>>()
+        val action get() = intents.lastOrNull()?.first
+        val targetPackage get() = intents.lastOrNull()?.second
+        val targetClass get() = intents.lastOrNull()?.third
     }
 
     private fun shortcuts(): List<Shortcut> {
@@ -39,11 +40,11 @@ class ShortcutsAndLocalesTest {
                     longLabel = parser.getAttributeResourceValue(ANDROID, "shortcutLongLabel", 0),
                     icon = parser.getAttributeResourceValue(ANDROID, "icon", 0),
                 )
-                "intent" -> out.last().apply {
-                    action = parser.getAttributeValue(ANDROID, "action")
-                    targetPackage = parser.getAttributeValue(ANDROID, "targetPackage")
-                    targetClass = parser.getAttributeValue(ANDROID, "targetClass")
-                }
+                "intent" -> out.last().intents += Triple(
+                    parser.getAttributeValue(ANDROID, "action"),
+                    parser.getAttributeValue(ANDROID, "targetPackage"),
+                    parser.getAttributeValue(ANDROID, "targetClass"),
+                )
             }
         }
         return out
@@ -62,6 +63,12 @@ class ShortcutsAndLocalesTest {
         assertEquals(R.string.settings_shortcut_long, shortcut.longLabel)
         assertEquals(R.drawable.ic_shortcut_widget_fuel, shortcut.icon)
         assertNotEquals(null, context.getDrawable(shortcut.icon))
+        // The app sits under the picker, so leaving it lands in the app, not on the launcher.
+        assertEquals(2, shortcut.intents.size)
+        assertEquals(
+            Triple("android.intent.action.MAIN", context.packageName, "com.pumperly.app.MainActivity"),
+            shortcut.intents.first(),
+        )
     }
 
     private fun configuredLocales(): Set<String> {

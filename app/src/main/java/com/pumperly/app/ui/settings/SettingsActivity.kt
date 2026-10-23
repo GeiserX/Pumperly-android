@@ -65,7 +65,9 @@ class SettingsActivity : ComponentActivity() {
     }
 
     private fun select(fuel: FuelType) {
-        lifecycleScope.launch {
+        // Outside lifecycleScope, like onStop: a rotation or a finish right after the tap must not
+        // drop the write or the widget refresh.
+        persistScope.launch {
             settings.setFuel(fuel)
             settings.setHasChosenFuel(true)
             (application as? WidgetFuelListener)?.onWidgetFuelChanged(fuel)
