@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Static launcher shortcuts: touch and hold the app icon. The id matches the iOS quick action
-     type, so both platforms name the action the same way. The launcher activity points here
+<!-- Static launcher shortcuts: touch and hold the app icon. The widget fuel id matches the iOS
+     quick action type, so both platforms name the action the same way. The launcher activity points here
      through <meta-data android:name="android.app.shortcuts"> in the manifest. -->
 <shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
     <shortcut
@@ -20,4 +20,35 @@
             android:targetPackage="com.pumperly.app"
             android:targetClass="com.pumperly.app.ui.settings.SettingsActivity" />
     </shortcut>
+    <!-- The widget's answer as a screen, the counterpart of the iOS "Cheapest nearby" Siri card.
+         One intent, and the activity has its own task affinity, so opening it leaves the app's
+         task and its page as they were. -->
+    <shortcut
+        android:shortcutId="com.pumperly.app.cheapest-nearby"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_cheapest_nearby"
+        android:shortcutShortLabel="@string/shortcut_cheapest_short"
+        android:shortcutLongLabel="@string/shortcut_cheapest_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.pumperly.app"
+            android:targetClass="com.pumperly.app.ui.cheapest.CheapestNearbyActivity" />
+        <capability-binding android:key="actions.intent.OPEN_APP_FEATURE">
+            <parameter-binding
+                android:key="feature"
+                android:value="@array/shortcut_cheapest_feature" />
+        </capability-binding>
+    </shortcut>
+    <!-- "Open cheapest nearby in Pumperly" through the assistant lands on the same screen. Kept
+         after the shortcuts: its intent is the capability's, not a shortcut's. -->
+    <capability android:name="actions.intent.OPEN_APP_FEATURE">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.pumperly.app"
+            android:targetClass="com.pumperly.app.ui.cheapest.CheapestNearbyActivity">
+            <parameter
+                android:name="feature"
+                android:key="feature" />
+        </intent>
+    </capability>
 </shortcuts>

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
@@ -7,14 +8,19 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <application
+        android:name=".PumperlyApplication"
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:label="@string/app_name"
+        android:localeConfig="@xml/locales_config"
         android:networkSecurityConfig="@xml/network_security_config"
         android:supportsRtl="true"
         android:theme="@style/Theme.Pumperly.Splash"
-        android:usesCleartextTraffic="false">
+        android:usesCleartextTraffic="false"
+        tools:ignore="UnusedAttribute">
+        <!-- UnusedAttribute is ignored only for android:localeConfig (API 33, minSdk 26: older
+             releases skip it). Kept narrow so NewApi still checks this element and its children. -->
 
         <activity
             android:name=".MainActivity"
@@ -46,7 +52,47 @@
                     android:host="www.pumperly.com" />
             </intent-filter>
 
+            <!-- Touch and hold the icon: "Widget fuel" and "Cheapest nearby". -->
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+
         </activity>
+
+        <!-- The widget fuel picker: first launch, launcher shortcut, widget header. It never
+             installs the splash screen, so it carries the plain theme; singleTop because a
+             static shortcut cannot pass flags and a second tap must not stack a second picker. -->
+        <activity
+            android:name=".ui.settings.SettingsActivity"
+            android:exported="false"
+            android:label="@string/settings_title"
+            android:launchMode="singleTop"
+            android:theme="@style/Theme.Pumperly" />
+
+        <!-- "Cheapest nearby", the widget's answer as a screen. Exported so the assistant can open
+             it through the OPEN_APP_FEATURE capability in shortcuts.xml; it reads nothing from
+             the intent. Its own task: the launcher starts a static shortcut with CLEAR_TASK, which
+             in the app's task would throw away the page the user had open. -->
+        <activity
+            android:name=".ui.cheapest.CheapestNearbyActivity"
+            android:exported="true"
+            android:taskAffinity=""
+            android:label="@string/widget_title"
+            android:launchMode="singleTop"
+            android:theme="@style/Theme.Pumperly" />
+
+        <!-- Home-screen widget. Refreshed by WidgetRefreshWorker, never by updatePeriodMillis. -->
+        <receiver
+            android:name=".widget.CheapestNearbyReceiver"
+            android:exported="true"
+            android:label="@string/widget_title">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_cheapest_nearby" />
+        </receiver>
 
     </application>
 

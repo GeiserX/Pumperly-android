@@ -45,7 +45,11 @@ class CheapestNearbyActivity : ComponentActivity() {
                         state = current,
                         onOpenStation = { open(WidgetIntents.page(this, it)) },
                         onRetry = ::load,
-                        onChangeFuel = { open(WidgetIntents.settings(this)) },
+                        // From an Activity the picker joins this task, so Back returns here; NEW_TASK
+                        // (needed by the widget) would move it into the web shell's task.
+                        onChangeFuel = {
+                            open(WidgetIntents.settings(this).apply { removeFlags(Intent.FLAG_ACTIVITY_NEW_TASK) })
+                        },
                         onOpenApp = { open(WidgetIntents.home(this)) },
                     )
                 }
