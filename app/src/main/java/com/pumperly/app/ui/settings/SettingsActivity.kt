@@ -49,7 +49,7 @@ class SettingsActivity : ComponentActivity() {
                     FuelPickerScreen(
                         selected = current,
                         isFirstRun = firstRun,
-                        onSelect = { option -> if (option != current) select(option) },
+                        onSelect = ::select,
                         onDone = ::done,
                     )
                 }
@@ -66,8 +66,10 @@ class SettingsActivity : ComponentActivity() {
 
     private fun select(fuel: FuelType) {
         // Outside lifecycleScope, like onStop: a rotation or a finish right after the tap must not
-        // drop the write or the widget refresh.
-        persistScope.launch {
+        // drop the write or the widget refresh. Main.immediate queues the write before this returns,
+        // so quick taps reach DataStore in tap order and the last tap wins. Every tap is written,
+        // even one on the fuel already shown: the shown value can lag a tap that is still saving.
+        persistScope.launch(Dispatchers.Main.immediate) {
             settings.setFuel(fuel)
             settings.setHasChosenFuel(true)
             (application as? WidgetFuelListener)?.onWidgetFuelChanged(fuel)
