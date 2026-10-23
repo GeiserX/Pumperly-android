@@ -21,7 +21,8 @@
             android:targetClass="com.pumperly.app.ui.settings.SettingsActivity" />
     </shortcut>
     <!-- The widget's answer as a screen, the counterpart of the iOS "Cheapest nearby" Siri card.
-         One intent: back from it returns to wherever it was opened from. -->
+         One intent, and the activity has its own task affinity, so opening it leaves the app's
+         task and its page as they were. -->
     <shortcut
         android:shortcutId="com.pumperly.app.cheapest-nearby"
         android:enabled="true"

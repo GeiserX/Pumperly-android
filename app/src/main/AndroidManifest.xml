@@ -69,10 +69,12 @@
 
         <!-- "Cheapest nearby", the widget's answer as a screen. Exported so the assistant can open
              it through the OPEN_APP_FEATURE capability in shortcuts.xml; it reads nothing from
-             the intent. -->
+             the intent. Its own task: the launcher starts a static shortcut with CLEAR_TASK, which
+             in the app's task would throw away the page the user had open. -->
         <activity
             android:name=".ui.cheapest.CheapestNearbyActivity"
             android:exported="true"
+            android:taskAffinity=""
             android:label="@string/widget_title"
             android:launchMode="singleTop"
             android:theme="@style/Theme.Pumperly" />

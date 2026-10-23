@@ -64,6 +64,8 @@ class ManifestWiringTest {
     fun theCheapestNearbyScreenIsDeclared() {
         val info = activity(CheapestNearbyActivity::class.java)
         assertTrue("the assistant opens it through OPEN_APP_FEATURE", info.exported)
+        // A static shortcut starts with CLEAR_TASK; in the app's own task that would drop the open page.
+        assertTrue("own task, not ${info.taskAffinity}", info.taskAffinity.isNullOrEmpty())
         assertEquals(R.style.Theme_Pumperly, info.theme)
         assertEquals(ActivityInfo.LAUNCH_SINGLE_TOP, info.launchMode)
     }
