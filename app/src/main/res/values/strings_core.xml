@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Fuel names, as the iOS app and the site name them. -->
+    <string name="fuel_B7">Diesel</string>
+    <string name="fuel_B7_PREMIUM">Premium diesel</string>
+    <string name="fuel_B10">Diesel B10</string>
+    <string name="fuel_B_AGRICULTURAL">Agricultural diesel (B)</string>
+    <string name="fuel_HVO">Renewable diesel (HVO)</string>
+    <string name="fuel_E5">Petrol 95</string>
+    <string name="fuel_E5_PREMIUM">Premium petrol 95</string>
+    <string name="fuel_E10">Petrol 95 E10</string>
+    <string name="fuel_E5_98">Petrol 98</string>
+    <string name="fuel_E98_E10">Petrol 98 E10</string>
+    <string name="fuel_LPG">LPG / Autogas</string>
+    <string name="fuel_CNG">CNG</string>
+    <string name="fuel_LNG">LNG</string>
+    <string name="fuel_H2">Hydrogen</string>
+    <string name="fuel_EV">EV charging</string>
+    <string name="fuel_ADBLUE">AdBlue</string>
+
+    <!-- Fuel picker sections. -->
+    <string name="fuel_category_diesel">Diesel</string>
+    <string name="fuel_category_gasoline">Petrol</string>
+    <string name="fuel_category_gas">Gas</string>
+    <string name="fuel_category_hydrogen">Hydrogen</string>
+    <string name="fuel_category_electric">Electric</string>
+    <string name="fuel_category_other">Other</string>
+</resources>

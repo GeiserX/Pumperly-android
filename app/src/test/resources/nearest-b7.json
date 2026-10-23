@@ -1,0 +1,125 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -3.703139,
+          40.405278
+        ]
+      },
+      "properties": {
+        "id": "7e0b6316-0cc2-4020-a774-786f1e2d279b",
+        "externalId": "4508",
+        "country": "ES",
+        "name": "Blanca Madrid",
+        "brand": "Blanca",
+        "address": "GLORIETA EMBAJADORES, 0",
+        "city": "Madrid",
+        "fuelType": "B7",
+        "currency": "EUR",
+        "price": 1.969,
+        "reportedAt": "2026-10-05T05:56:39.529Z",
+        "distanceKm": 1.308
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -3.705389,
+          40.404417
+        ]
+      },
+      "properties": {
+        "id": "6e497a5b-6267-4ebf-b566-b71ba6c75993",
+        "externalId": "3217",
+        "country": "ES",
+        "name": "Repsol Madrid",
+        "brand": "Repsol",
+        "address": "CL PASEO ACACIAS, 8",
+        "city": "Madrid",
+        "fuelType": "B7",
+        "currency": "EUR",
+        "price": 1.979,
+        "reportedAt": "2026-10-05T05:56:39.529Z",
+        "distanceKm": 1.409
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -3.708389,
+          40.429694
+        ]
+      },
+      "properties": {
+        "id": "b4f3faf1-5f14-432b-b6c3-5539c9c36b2e",
+        "externalId": "4352",
+        "country": "ES",
+        "name": "Repsol Madrid",
+        "brand": "Repsol",
+        "address": "CALLE ALBERTO AGUILERA, 9",
+        "city": "Madrid",
+        "fuelType": "B7",
+        "currency": "EUR",
+        "price": 1.975,
+        "reportedAt": "2026-10-05T05:56:39.529Z",
+        "distanceKm": 1.495
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -3.7085,
+          40.43
+        ]
+      },
+      "properties": {
+        "id": "3af11023-1dea-4869-8be7-4bbc7d378b2e",
+        "externalId": "4711",
+        "country": "ES",
+        "name": "Shell Madrid",
+        "brand": "Shell",
+        "address": "CALLE ALBERTO AGUILERA, 18",
+        "city": "Madrid",
+        "fuelType": "B7",
+        "currency": "EUR",
+        "price": 1.949,
+        "reportedAt": "2026-10-05T05:56:39.529Z",
+        "distanceKm": 1.531
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -3.69525,
+          40.405639
+        ]
+      },
+      "properties": {
+        "id": "2dd2314b-470b-4e80-8a5e-311e5f03cb1c",
+        "externalId": "3218",
+        "country": "ES",
+        "name": "Repsol Madrid",
+        "brand": "Repsol",
+        "address": "PASEO SANTA MARIA DE LA CABEZA, 18",
+        "city": "Madrid",
+        "fuelType": "B7",
+        "currency": "EUR",
+        "price": 1.955,
+        "reportedAt": "2026-10-05T05:56:39.529Z",
+        "distanceKm": 1.596
+      }
+    }
+  ]
+}
