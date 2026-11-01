@@ -84,7 +84,7 @@ jobs:
           [ "$aab_cert" = "$UPLOAD_CERT_SHA256" ] || { echo "AAB is not signed with the upload key"; exit 1; }
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.version.outputs.tag }}
           name: ${{ steps.version.outputs.tag }}
