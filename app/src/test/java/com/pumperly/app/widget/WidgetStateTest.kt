@@ -14,8 +14,9 @@ import java.util.Locale
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.job
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -165,13 +166,15 @@ class WidgetStateTest {
     @Test
     fun theStoreKeepsTheStateAndRecoversFromCorruption() = runTest {
         val file = File(directory, "widget-state.json")
+        // DataStore frees the file only once its scope has completed, not when cancel() returns,
+        // so wait for each store to close before the next one opens the same file.
         val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
         try {
             val state = WidgetState.refresh(now, FuelType.B7, madrid, FakeNearestApi(Fixture.stations("nearest-b7")), cache)
             WidgetStateDefinition.create(scope) { file }.updateData { state }
             assertTrue(file.length() > 0)
         } finally {
-            scope.cancel()
+            scope.coroutineContext.job.cancelAndJoin()
         }
         val reread = CoroutineScope(Dispatchers.IO + SupervisorJob())
         try {
@@ -179,14 +182,14 @@ class WidgetStateTest {
             assertEquals(WidgetState.Kind.STATIONS, back.kind)
             assertEquals(3, back.stations.size)
         } finally {
-            reread.cancel()
+            reread.coroutineContext.job.cancelAndJoin()
         }
         file.writeText("{not json")
         val corrupt = CoroutineScope(Dispatchers.IO + SupervisorJob())
         try {
             assertEquals(WidgetState(), WidgetStateDefinition.create(corrupt) { file }.data.first())
         } finally {
-            corrupt.cancel()
+            corrupt.coroutineContext.job.cancelAndJoin()
         }
     }
 }
