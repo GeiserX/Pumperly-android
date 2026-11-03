@@ -1,0 +1,2 @@
+- Herramientas de compilación de Android, Kotlin y WebKit actualizados
+- Sin cambios visibles; mismas funciones que la 1.1.0
