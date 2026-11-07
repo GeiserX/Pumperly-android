@@ -1,0 +1,1 @@
+- El widget de la pantalla de inicio ya no descarga por segunda vez las gasolineras cercanas al abrir la app

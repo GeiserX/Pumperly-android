@@ -1,0 +1,1 @@
+- The home screen widget no longer downloads the nearby stations a second time when you open the app
