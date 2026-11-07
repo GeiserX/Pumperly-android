@@ -137,8 +137,9 @@ class WidgetStateTest {
     @Test
     fun refreshIsHourlyAndSoonerAfterAFailureOrACachedAnswer() = runTest {
         cache.save(StationCache.Snapshot(now.minus(Duration.ofMinutes(5)), FuelType.B7, 40.418, -3.705, Fixture.stations("nearest-b7")))
-        val good = WidgetState.refresh(now, FuelType.B7, madrid, FakeNearestApi(Fixture.stations("nearest-b7")), cache)
+        // The failure first: the good answer re-caches at `now`, which a refresh right after would reuse.
         val cached = WidgetState.refresh(now, FuelType.B7, madrid, FakeNearestApi(fail = true), cache)
+        val good = WidgetState.refresh(now, FuelType.B7, madrid, FakeNearestApi(Fixture.stations("nearest-b7")), cache)
         val noLocation = WidgetState.refresh(now, FuelType.B7, null, FakeNearestApi(), cache)
         StationCache(directory).clear()
         val bad = WidgetState.refresh(now, FuelType.B7, madrid, FakeNearestApi(fail = true), cache)
