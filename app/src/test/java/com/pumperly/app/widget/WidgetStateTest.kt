@@ -169,8 +169,9 @@ class WidgetStateTest {
     fun anOlderFarOrOtherFuelSnapshotStillAsks() = runTest {
         val old = StationCache.Snapshot(now.minus(NearbyPrefetcher.MINIMUM_INTERVAL).minusSeconds(1), FuelType.B7, 40.418, -3.705, Fixture.stations("nearest-b7"))
         val far = StationCache.Snapshot(now, FuelType.B7, 40.440, -3.705, Fixture.stations("nearest-b7"))
+        val justOver = StationCache.Snapshot(now, FuelType.B7, 40.4305, -3.704, Fixture.stations("nearest-b7"))
         val otherFuel = StationCache.Snapshot(now, FuelType.E5, 40.418, -3.705, Fixture.stations("nearest-b7"))
-        for (snapshot in listOf(old, far, otherFuel)) {
+        for (snapshot in listOf(old, far, justOver, otherFuel)) {
             cache.save(snapshot)
             val api = FakeNearestApi(Fixture.stations("nearest-b7"))
             WidgetState.refresh(now, FuelType.B7, madrid, api, cache)
