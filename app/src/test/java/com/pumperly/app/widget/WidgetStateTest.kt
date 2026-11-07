@@ -4,6 +4,8 @@ import com.pumperly.app.core.CheapestNearbyEntry
 import com.pumperly.app.core.Coordinate
 import com.pumperly.app.core.Fixture
 import com.pumperly.app.core.FuelType
+import com.pumperly.app.core.NearbyPrefetcher
+import com.pumperly.app.core.SharedSettings
 import com.pumperly.app.core.StationCache
 import com.pumperly.app.core.TimelineMapping
 import java.io.File
@@ -126,7 +128,7 @@ class WidgetStateTest {
 
     @Test
     fun liveResultsIgnoreTheCache() = runTest {
-        cache.save(StationCache.Snapshot(now, FuelType.B7, 40.418, -3.705, Fixture.stations("nearest-b7")))
+        cache.save(StationCache.Snapshot(now.minus(Duration.ofMinutes(5)), FuelType.B7, 40.418, -3.705, Fixture.stations("nearest-b7")))
         val state = WidgetState.refresh(now, FuelType.B7, madrid, FakeNearestApi(emptyList()), cache)
         assertEquals(WidgetState.Kind.EMPTY, state.kind)
         assertNull(state.asOfMillis)
@@ -134,7 +136,7 @@ class WidgetStateTest {
 
     @Test
     fun refreshIsHourlyAndSoonerAfterAFailureOrACachedAnswer() = runTest {
-        cache.save(StationCache.Snapshot(now, FuelType.B7, 40.418, -3.705, Fixture.stations("nearest-b7")))
+        cache.save(StationCache.Snapshot(now.minus(Duration.ofMinutes(5)), FuelType.B7, 40.418, -3.705, Fixture.stations("nearest-b7")))
         val good = WidgetState.refresh(now, FuelType.B7, madrid, FakeNearestApi(Fixture.stations("nearest-b7")), cache)
         val cached = WidgetState.refresh(now, FuelType.B7, madrid, FakeNearestApi(fail = true), cache)
         val noLocation = WidgetState.refresh(now, FuelType.B7, null, FakeNearestApi(), cache)
@@ -150,6 +152,45 @@ class WidgetStateTest {
         assertFalse(noLocation.wantsRetry)
         assertTrue(cached.wantsRetry)
         assertTrue(bad.wantsRetry)
+    }
+
+    @Test
+    fun aJustPrefetchedSnapshotIsReusedWithoutAnotherRequest() = runTest {
+        cache.save(StationCache.Snapshot(now.minusSeconds(10), FuelType.B7, 40.418, -3.705, Fixture.stations("nearest-b7")))
+        val api = FakeNearestApi(fail = true)
+        val state = WidgetState.refresh(now, FuelType.B7, madrid, api, cache)
+        assertTrue(api.calls.isEmpty())
+        assertEquals(WidgetState.Kind.STATIONS, state.kind)
+        assertEquals(listOf("4711", "3218", "4508"), state.stations.map { it.externalId })
+        assertNull(state.asOfMillis)
+    }
+
+    @Test
+    fun anOlderFarOrOtherFuelSnapshotStillAsks() = runTest {
+        val old = StationCache.Snapshot(now.minus(NearbyPrefetcher.MINIMUM_INTERVAL).minusSeconds(1), FuelType.B7, 40.418, -3.705, Fixture.stations("nearest-b7"))
+        val far = StationCache.Snapshot(now, FuelType.B7, 40.440, -3.705, Fixture.stations("nearest-b7"))
+        val otherFuel = StationCache.Snapshot(now, FuelType.E5, 40.418, -3.705, Fixture.stations("nearest-b7"))
+        for (snapshot in listOf(old, far, otherFuel)) {
+            cache.save(snapshot)
+            val api = FakeNearestApi(Fixture.stations("nearest-b7"))
+            WidgetState.refresh(now, FuelType.B7, madrid, api, cache)
+            assertEquals(1, api.calls.size)
+        }
+    }
+
+    @Test
+    fun aPrefetchThenAWidgetRefreshSendOneRequest() = runTest {
+        val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+        try {
+            val settings = SharedSettings(SharedSettings.store(scope) { File(directory, "s.preferences_pb") })
+            val api = FakeNearestApi(Fixture.stations("nearest-b7"))
+            NearbyPrefetcher(settings, cache, api, scope).positionDelivered(madrid.latitude, madrid.longitude, now)!!.join()
+            val state = WidgetState.refresh(now.plusSeconds(5), settings.fuel(), madrid, api, cache)
+            assertEquals(1, api.calls.size)
+            assertEquals(WidgetState.Kind.STATIONS, state.kind)
+        } finally {
+            scope.coroutineContext.job.cancelAndJoin()
+        }
     }
 
     @Test
