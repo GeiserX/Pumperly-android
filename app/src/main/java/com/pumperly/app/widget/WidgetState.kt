@@ -10,6 +10,7 @@ import androidx.glance.state.GlanceStateDefinition
 import com.pumperly.app.core.CheapestNearbyEntry
 import com.pumperly.app.core.Coordinate
 import com.pumperly.app.core.FuelType
+import com.pumperly.app.core.NearbyPrefetcher
 import com.pumperly.app.core.NearestApi
 import com.pumperly.app.core.Station
 import com.pumperly.app.core.StationCache
@@ -75,6 +76,8 @@ data class WidgetState(
          * saved in the foreground, or null when there is none or location is not allowed; then
          * nothing is sent. A good answer is cached on the device. A failed fetch falls back to
          * the cached stations when they are for this fuel, at most a day old and taken near here.
+         * When the app's prefetcher has just fetched this fuel within a kilometre of here, those
+         * stations are used as they are, so opening the app sends one request, not two.
          */
         suspend fun refresh(
             now: Instant,
@@ -84,14 +87,20 @@ data class WidgetState(
             cache: StationCache,
         ): WidgetState {
             if (position == null) return WidgetState(now.toEpochMilli(), fuel.code, Kind.NEEDS_LOCATION)
-            val result = try {
-                Result.success(api.fetchNearest(position.latitude, position.longitude, fuel))
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Result.failure(e)
+            val prefetched = cache.load(fuel, NearbyPrefetcher.MINIMUM_INTERVAL, now)
+                ?.takeIf { it.isNear(position.latitude, position.longitude, NearbyPrefetcher.DISTANCE_KM) }
+            val result = if (prefetched != null) {
+                Result.success(prefetched.stations)
+            } else {
+                try {
+                    Result.success(api.fetchNearest(position.latitude, position.longitude, fuel))
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Result.failure(e)
+                }
             }
-            result.onSuccess { stations ->
+            if (prefetched == null) result.onSuccess { stations ->
                 // Losing the offline copy is not worth failing the refresh for.
                 runCatching { cache.save(StationCache.Snapshot(now, fuel, position.latitude, position.longitude, stations)) }
             }

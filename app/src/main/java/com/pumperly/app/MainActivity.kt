@@ -508,7 +508,7 @@ class MainActivity : ComponentActivity() {
     private fun refreshSavedLocation() {
         if (locationJob?.isActive == true) return
         locationJob = lifecycleScope.launch {
-            when (val outcome = Locator.locate(this@MainActivity)) {
+            val prefetch = when (val outcome = Locator.locate(this@MainActivity)) {
                 is Locator.Outcome.Fix -> {
                     runCatching { settings.saveLocation(outcome.latitude, outcome.longitude) }
                     prefetcher.positionDelivered(outcome.latitude, outcome.longitude)
@@ -516,11 +516,17 @@ class MainActivity : ComponentActivity() {
                 Locator.Outcome.Denied -> withContext(Dispatchers.IO) {
                     runCatching { settings.clearLocation() }
                     stationCache.clear()
+                    null
                 }
-                Locator.Outcome.Unavailable -> Unit
+                Locator.Outcome.Unavailable -> null
             }
-            // The widget redraws from what was just saved. Without a widget the worker does nothing.
-            WidgetRefreshWorker.refreshNow(this@MainActivity)
+            // The widget redraws from what was just saved. It waits for a prefetch to land so it
+            // reuses those stations instead of asking for them again; leaving the app while that
+            // fetch runs does not cancel the redraw. Without a widget the worker does nothing.
+            backgroundScope.launch {
+                prefetch?.join()
+                WidgetRefreshWorker.refreshNow(this@MainActivity)
+            }
         }
     }
 
