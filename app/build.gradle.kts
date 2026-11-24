@@ -6,7 +6,13 @@ plugins {
 
 android {
     namespace = "com.pumperly.app"
-    compileSdk = 37
+    // Compose 1.13 (BOM 2026.11) declares minCompileSdk 37 with minor API
+    // level 1, so checkAarMetadata fails on plain 37 (= 37.0).
+    compileSdk {
+        version = release(37) {
+            minorApiLevel = 1
+        }
+    }
 
     defaultConfig {
         applicationId = "com.pumperly.app"
