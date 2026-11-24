@@ -7,7 +7,7 @@ Official Android app for Pumperly, the open-source fuel and EV route planner. A 
 - Kotlin 2.4.0, compiled by AGP 9's built-in Kotlin. The `kotlin-android` plugin is declared at the root with `apply false` only to pin the compiler version; `:app` applies the Compose and serialization compiler plugins, which must match it.
 - The WebView shell is Android Views with a programmatic layout; new native screens use Jetpack Compose (Material 3), the widget uses Glance, background refresh uses WorkManager, settings use DataStore Preferences, JSON uses kotlinx.serialization
 - AndroidX WebKit, SwipeRefreshLayout, SplashScreen
-- Android SDK 26+ (minSdk), compileSdk 37, targetSdk 36
+- Android SDK 26+ (minSdk), compileSdk 37.1 (`release(37) { minorApiLevel = 1 }`; Compose 1.13 needs it), targetSdk 36
 - JDK 17 (CI and the Docker build agree)
 - Gradle with version catalogs (`gradle/libs.versions.toml`)
 - Unit tests: JUnit 4 + Robolectric under `app/src/test`. Robolectric runs the API 35 sandbox (`app/src/test/resources/robolectric.properties`) because its API 36 sandbox needs Java 21
